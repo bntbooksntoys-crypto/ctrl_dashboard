@@ -32,10 +32,7 @@
   .wrap{max-width:880px;margin:0 auto}
 
   /* ---- lock screen ---- */
-  #lock{
-    min-height:88vh;
-    display:flex;align-items:center;justify-content:center;
-  }
+  #lock{min-height:88vh;display:flex;align-items:center;justify-content:center}
   .lock-card{
     background:var(--card);
     border:1px solid var(--line);
@@ -66,7 +63,7 @@
   .lock-card input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
   .lock-err{color:#B3362B;font-size:.86rem;display:none;margin-top:2px}
 
-  /* ---- shared buttons ---- */
+  /* ---- buttons ---- */
   .btn{
     font-family:inherit;font-size:.95rem;font-weight:600;
     border-radius:9px;padding:11px 16px;cursor:pointer;
@@ -86,13 +83,13 @@
   header h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-0.02em;line-height:1.1}
   header h1 .dot{color:var(--cobalt)}
   header p{margin-top:10px;color:var(--ink-soft);max-width:46ch;font-size:.98rem}
-  .lock-btn{
-    position:absolute;top:60px;right:0;
+  .head-actions{position:absolute;top:60px;right:0;display:flex;gap:10px}
+  .head-btn{
     background:none;border:1px solid var(--line);border-radius:9px;
     font-family:inherit;font-size:.85rem;color:var(--ink-soft);
     padding:8px 14px;cursor:pointer;
   }
-  .lock-btn:hover{color:var(--ink);background:#fff}
+  .head-btn:hover{color:var(--ink);background:#fff}
 
   .grid{display:grid;gap:18px}
   .card{
@@ -112,9 +109,21 @@
   .card h2{font-size:1.2rem;font-weight:700}
   .url{display:block;font-size:.84rem;color:var(--ink-soft);word-break:break-all;margin:4px 0 6px}
   .desc{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px}
+  .device-tag{
+    display:inline-block;font-size:.72rem;color:var(--teal-deep);
+    border:1px solid var(--teal);border-radius:6px;
+    padding:1px 8px;margin-left:8px;vertical-align:middle;
+  }
   .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .link-gh{font-size:.86rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px}
   .link-gh:hover{color:var(--ink)}
+  .link-remove{
+    font-size:.86rem;color:var(--ink-soft);
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    text-decoration:underline;text-underline-offset:3px;margin-left:auto;
+  }
+  .link-remove:hover{color:#B3362B}
+  .link-remove.arm{color:#B3362B;font-weight:600;text-decoration:none}
 
   .fallback-box{display:none;margin-top:12px}
   .fallback-box input{
@@ -123,6 +132,30 @@
     color:var(--ink);background:#FBFCFE;
   }
   .fallback-box label{font-size:.8rem;color:var(--ink-soft);display:block;margin-bottom:5px}
+
+  /* ---- admin / add section ---- */
+  .admin{
+    margin-top:34px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .admin h3{font-size:1.02rem;font-weight:700;margin-bottom:4px}
+  .admin p{font-size:.86rem;color:var(--ink-soft);margin-bottom:14px}
+  .admin form{display:flex;gap:10px;flex-wrap:wrap}
+  .admin input{
+    flex:1;min-width:200px;
+    font-family:inherit;font-size:.92rem;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    color:var(--ink);background:#FBFCFE;
+  }
+  .admin input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
+  .admin .hint{font-size:.8rem;color:var(--ink-soft);margin-top:10px;margin-bottom:0}
+  .admin .err{color:#B3362B;font-size:.85rem;margin-top:10px;display:none}
+  #addPanel{display:none}
 
   #toast{
     position:fixed;left:50%;bottom:28px;
@@ -139,7 +172,7 @@
   @media (max-width:540px){
     .card{grid-template-columns:1fr}
     .tile{width:56px;height:56px;font-size:1.3rem}
-    .lock-btn{position:static;margin-top:14px}
+    .head-actions{position:static;margin-top:14px}
   }
 </style>
 </head>
@@ -168,9 +201,34 @@
     <header>
       <h1>My Websites<span class="dot">.</span></h1>
       <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
-      <button type="button" class="lock-btn" id="relock">Lock page</button>
+      <div class="head-actions">
+        <button type="button" class="head-btn" id="adminBtn">Add pages</button>
+        <button type="button" class="head-btn" id="relock">Lock page</button>
+      </div>
     </header>
+
     <div class="grid" id="grid"></div>
+
+    <section class="admin" id="adminGate" style="display:none">
+      <h3>Add pages</h3>
+      <p>Enter the admin password to add or remove websites.</p>
+      <form id="adminForm">
+        <input id="adminPw" type="password" placeholder="Admin password" autocomplete="off" aria-label="Admin password">
+        <button type="submit" class="btn btn-primary" id="adminUnlockBtn">Open</button>
+      </form>
+      <p class="err" id="adminErr">Wrong admin password.</p>
+    </section>
+
+    <section class="admin" id="addPanel">
+      <h3>Add a website</h3>
+      <p>Paste a GitHub repository link or the website's address. The live site link is worked out for you.</p>
+      <form id="addForm">
+        <input id="addInput" type="text" placeholder="https://github.com/you/your-project" aria-label="GitHub repository or website address">
+        <button type="submit" class="btn btn-primary">Add website</button>
+      </form>
+      <p class="hint">Saved on this device, protected by your password. For the permanent list on every device, ask Claude to re-seal the page.</p>
+      <p class="err" id="addErr"></p>
+    </section>
   </div>
 </div>
 
@@ -180,9 +238,19 @@
 (function(){
   'use strict';
 
-  // Site list, AES-256-GCM encrypted with the password (PBKDF2-SHA256, 310k rounds).
-  // Without the password this cannot be read.
-  var PAYLOAD = 'IuihpcOMvGb24tj8m7pI0mOVq2KTVcHcDzUjMqHH6Bs17xuMjZTtdxKwcdWIH6Z47r4XluHYO95Le58ACrox/CnnoOD7w8P5JmWcrBrYxbSGz/C71/+QukUIuORmnUNFqZ0JSFdHBiN3RbMLHlYFtXj/mrYHsGxNPEVvMYwhboD7h6OLpzHkkPn21AeedgmzCJG8M3EOgT4XTwkcI0v/XdBrtp/z7WwLh/KznXLmXTEmgasORvEptpurXwDNlJPoSjA1hqT7gtTPbUtistm9S6aXjT8AV/9Xum9nFXEuUtLJFG6hy0yUcGR399r5KrnXnH/JXmpDjbl+jLAeqDKf+HxWh+miegIfyPR6Tm/tP/+ECVVIlgLZcMkUh9KrTMUYjSwLL0h7DvZ3oRh2t6y7jLxo873gNec=';
+  // Base site list, AES-256-GCM encrypted with the view password
+  // (PBKDF2-SHA256, 310k rounds). Unreadable without the password.
+  var PAYLOAD = 'f/1JKUGWjpvN/LfukwkVN4NXUmErkiQHtZX375rvLpCyB8L7ErJA6vZI+rXIWLZ+GNcI7ECNi82DKeP3PgrQ7Sl49d7Dj4HS2OGkvRIaMgcUlSP6yuHtxHrBy3nN/MgTbzSaybASZOn5RrnQER6/lS3h84Cw0RmitINKHuTI/lQDkh33N9aOR2w9Q2y8Tscgl8wrCk+wLAJzT/AxFdxNcrlEQC/Lev8scP6OfWsIdRKvirhUshmaf/HWExMT7JhvuUXH9ZsUW+FGvCeEkORPe724d0ehLfiL9KQiNh1dZlZjNThW78yEpTEJmFjX/EBnLG0HmewZ0pA3QZEqd6mlIx5f6mAepLRlt/KpfCmm89OvYakoM3Fc56HqOf9AHXPQ5hIJB5Li4Gmcjs20O27/3L6U+Pktoas=';
+  // Admin password verifier: PBKDF2 hash only — the password itself is not in this file.
+  var ADMIN_SALT = 'ksViXMC6Owui+xphJM5w/Q==';
+  var ADMIN_HASH = 'wTq9G7dBcD71Hee+TBRi75+4bfAeERY6b1b8pYpgiLo=';
+  var LOCAL_KEY = 'myw_local_v1';
+  var ITER = 310000;
+
+  var viewKeyMaterial = null;   // kept only while unlocked, gone on reload
+  var baseSites = [];
+  var localSites = [];
+  var adminOpen = false;
 
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
@@ -198,19 +266,99 @@
     for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
   }
+  function bytesToB64(bytes){
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s);
+  }
 
-  async function decrypt(password){
-    var data = b64ToBytes(PAYLOAD);
-    var salt = data.slice(0, 16);
-    var iv = data.slice(16, 28);
-    var ct = data.slice(28);
-    var keyMaterial = await crypto.subtle.importKey(
-      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
-    var key = await crypto.subtle.deriveKey(
-      { name:'PBKDF2', salt: salt, iterations: 310000, hash:'SHA-256' },
-      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+  function importPw(password){
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey','deriveBits']);
+  }
+  function deriveAes(keyMaterial, salt, usages){
+    return crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt: salt, iterations: ITER, hash:'SHA-256' },
+      keyMaterial, { name:'AES-GCM', length:256 }, false, usages);
+  }
+
+  async function decryptBlob(keyMaterial, b64){
+    var data = b64ToBytes(b64);
+    var salt = data.slice(0,16), iv = data.slice(16,28), ct = data.slice(28);
+    var key = await deriveAes(keyMaterial, salt, ['decrypt']);
     var pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: iv }, key, ct);
     return JSON.parse(new TextDecoder().decode(pt));
+  }
+
+  async function encryptBlob(keyMaterial, obj){
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var key = await deriveAes(keyMaterial, salt, ['encrypt']);
+    var ct = new Uint8Array(await crypto.subtle.encrypt(
+      { name:'AES-GCM', iv: iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+    var out = new Uint8Array(16 + 12 + ct.length);
+    out.set(salt, 0); out.set(iv, 16); out.set(ct, 28);
+    return bytesToB64(out);
+  }
+
+  async function checkAdmin(password){
+    var km = await importPw(password);
+    var bits = new Uint8Array(await crypto.subtle.deriveBits(
+      { name:'PBKDF2', salt: b64ToBytes(ADMIN_SALT), iterations: ITER, hash:'SHA-256' }, km, 256));
+    return bytesToB64(bits) === ADMIN_HASH;
+  }
+
+  async function loadLocal(){
+    localSites = [];
+    try {
+      var blob = localStorage.getItem(LOCAL_KEY);
+      if (blob && viewKeyMaterial){
+        localSites = await decryptBlob(viewKeyMaterial, blob);
+        if (!Array.isArray(localSites)) localSites = [];
+      }
+    } catch(e){ localSites = []; }
+  }
+
+  async function saveLocal(){
+    try {
+      if (!viewKeyMaterial) return false;
+      var blob = await encryptBlob(viewKeyMaterial, localSites);
+      localStorage.setItem(LOCAL_KEY, blob);
+      return true;
+    } catch(e){ return false; }
+  }
+
+  function pretty(s){
+    return s.replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()
+            .replace(/\b\w/g,function(c){ return c.toUpperCase(); });
+  }
+
+  function parseInput(raw){
+    raw = (raw||'').trim();
+    if (!raw) return null;
+    var href = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+    var url;
+    try { url = new URL(href); } catch(e){ return null; }
+    var host = url.hostname.toLowerCase();
+    var parts = url.pathname.split('/').filter(Boolean);
+    if (host === 'github.com' && parts.length >= 2){
+      var owner = parts[0], repo = parts[1].replace(/\.git$/,'');
+      var site = (repo.toLowerCase() === (owner + '.github.io').toLowerCase())
+        ? 'https://' + owner + '.github.io/'
+        : 'https://' + owner + '.github.io/' + repo + '/';
+      return { name: pretty(repo), siteUrl: site, repoUrl: 'https://github.com/' + owner + '/' + repo };
+    }
+    var m = host.match(/^([a-z0-9-]+)\.github\.io$/);
+    if (m){
+      var o = m[1];
+      if (parts.length >= 1){
+        return { name: pretty(parts[0]),
+                 siteUrl: 'https://' + o + '.github.io/' + parts[0] + '/',
+                 repoUrl: 'https://github.com/' + o + '/' + parts[0] };
+      }
+      return { name: pretty(o), siteUrl: 'https://' + o + '.github.io/',
+               repoUrl: 'https://github.com/' + o + '/' + o + '.github.io' };
+    }
+    return { name: pretty(host.replace(/^www\./,'')), siteUrl: url.href, repoUrl: '' };
   }
 
   function copyText(text, okMsg, card){
@@ -235,10 +383,13 @@
     toast('Select and copy the link below.');
   }
 
-  function render(sites){
+  function render(){
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
-    sites.forEach(function(s, i){
+    var all = baseSites.map(function(s){ return { s:s, local:false }; })
+      .concat(localSites.map(function(s){ return { s:s, local:true }; }));
+    all.forEach(function(item, i){
+      var s = item.s;
       var card = document.createElement('article');
       card.className = 'card';
 
@@ -248,7 +399,16 @@
       card.appendChild(tile);
 
       var body = document.createElement('div');
-      var h = document.createElement('h2'); h.textContent = s.name; body.appendChild(h);
+      var h = document.createElement('h2');
+      h.textContent = s.name || 'Untitled site';
+      if (item.local){
+        var tag = document.createElement('span');
+        tag.className = 'device-tag';
+        tag.textContent = 'this device';
+        h.appendChild(tag);
+      }
+      body.appendChild(h);
+
       var u = document.createElement('span'); u.className = 'url'; u.textContent = s.siteUrl; body.appendChild(u);
       if (s.desc){ var p = document.createElement('p'); p.className = 'desc'; p.textContent = s.desc; body.appendChild(p); }
 
@@ -259,7 +419,7 @@
       visit.href = s.siteUrl; visit.target = '_blank'; visit.rel = 'noopener';
       visit.textContent = 'Visit site';
       visit.addEventListener('click', function(){
-        copyText(s.siteUrl, 'Link copied — opening ' + s.name, card);
+        copyText(s.siteUrl, 'Link copied — opening ' + (s.name || 'site'), card);
       });
       row.appendChild(visit);
 
@@ -277,6 +437,24 @@
         row.appendChild(gh);
       }
 
+      if (item.local && adminOpen){
+        var rm = document.createElement('button');
+        rm.className = 'link-remove'; rm.type = 'button'; rm.textContent = 'Remove';
+        rm.addEventListener('click', function(){
+          if (!rm.classList.contains('arm')){
+            rm.classList.add('arm'); rm.textContent = 'Remove — sure?';
+            setTimeout(function(){ rm.classList.remove('arm'); rm.textContent = 'Remove'; }, 3500);
+            return;
+          }
+          localSites = localSites.filter(function(x){ return x !== s; });
+          saveLocal().then(function(ok){
+            render();
+            toast(ok ? 'Removed ' + (s.name || 'site') : 'Removed, but saving failed on this device.');
+          });
+        });
+        row.appendChild(rm);
+      }
+
       body.appendChild(row);
 
       var fb = document.createElement('div');
@@ -289,6 +467,7 @@
     });
   }
 
+  // ---- view unlock ----
   document.getElementById('lockForm').addEventListener('submit', function(ev){
     ev.preventDefault();
     var pwEl = document.getElementById('pw');
@@ -296,8 +475,15 @@
     var btn = document.getElementById('unlockBtn');
     err.style.display = 'none';
     btn.textContent = 'Checking…'; btn.disabled = true;
-    decrypt(pwEl.value).then(function(sites){
-      render(sites);
+    var pwVal = pwEl.value;
+    importPw(pwVal).then(function(km){
+      return decryptBlob(km, PAYLOAD).then(function(sitesList){
+        viewKeyMaterial = km;
+        baseSites = sitesList;
+        return loadLocal();
+      });
+    }).then(function(){
+      render();
       document.getElementById('lock').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       pwEl.value = '';
@@ -309,11 +495,78 @@
     });
   });
 
-  // Lock again on demand; closing or reloading the page also relocks,
-  // because nothing is ever stored.
+  // ---- admin gate ----
+  document.getElementById('adminBtn').addEventListener('click', function(){
+    if (adminOpen){
+      document.getElementById('addPanel').scrollIntoView();
+      return;
+    }
+    var gate = document.getElementById('adminGate');
+    gate.style.display = gate.style.display === 'none' ? 'block' : 'none';
+    if (gate.style.display === 'block'){
+      gate.scrollIntoView();
+      try { document.getElementById('adminPw').focus(); } catch(e){}
+    }
+  });
+
+  document.getElementById('adminForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var pwEl = document.getElementById('adminPw');
+    var err = document.getElementById('adminErr');
+    var btn = document.getElementById('adminUnlockBtn');
+    err.style.display = 'none';
+    btn.textContent = 'Checking…'; btn.disabled = true;
+    checkAdmin(pwEl.value).then(function(ok){
+      btn.textContent = 'Open'; btn.disabled = false;
+      pwEl.value = '';
+      if (ok){
+        adminOpen = true;
+        document.getElementById('adminGate').style.display = 'none';
+        document.getElementById('addPanel').style.display = 'block';
+        render();
+        toast('Add pages unlocked');
+        try { document.getElementById('addInput').focus(); } catch(e){}
+      } else {
+        err.style.display = 'block';
+        pwEl.focus();
+      }
+    }).catch(function(){
+      btn.textContent = 'Open'; btn.disabled = false;
+      err.style.display = 'block';
+    });
+  });
+
+  // ---- add site ----
+  document.getElementById('addForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var inp = document.getElementById('addInput');
+    var err = document.getElementById('addErr');
+    var parsed = parseInput(inp.value);
+    if (!parsed){
+      err.textContent = "That doesn't look like a link. Paste something like https://github.com/you/your-project";
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    parsed.desc = '';
+    localSites.push(parsed);
+    saveLocal().then(function(ok){
+      render();
+      inp.value = '';
+      toast(ok ? 'Added ' + parsed.name + ' (saved on this device)'
+               : 'Added ' + parsed.name + ' — but saving failed, it may not survive a reload.');
+    });
+  });
+
+  // ---- relock: closing or reloading the page also relocks, nothing unlocked is kept ----
   document.getElementById('relock').addEventListener('click', function(){
+    viewKeyMaterial = null;
+    baseSites = []; localSites = [];
+    adminOpen = false;
     document.getElementById('grid').innerHTML = '';
     document.getElementById('app').style.display = 'none';
+    document.getElementById('addPanel').style.display = 'none';
+    document.getElementById('adminGate').style.display = 'none';
     document.getElementById('lock').style.display = 'flex';
     var pwEl = document.getElementById('pw');
     pwEl.value = '';
