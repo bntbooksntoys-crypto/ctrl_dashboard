@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Websites</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E8EDF3;
+    --card:#FFFFFF;
+    --ink:#192436;
+    --ink-soft:#5B6B82;
+    --line:#D4DCE6;
+    --cobalt:#1D5BDC;
+    --cobalt-deep:#1546A8;
+    --teal:#0FA38A;
+    --teal-deep:#0B7D6A;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Sora',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:0 20px 80px;
+    line-height:1.55;
+  }
+  .wrap{max-width:880px;margin:0 auto}
+
+  /* ---- lock screen ---- */
+  #lock{
+    min-height:88vh;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lock-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:40px 34px;
+    width:100%;max-width:400px;
+    text-align:center;
+  }
+  .lock-badge{
+    width:64px;height:64px;margin:0 auto 18px;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lock-badge svg{width:28px;height:28px;stroke:#fff}
+  .lock-card h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em}
+  .lock-card h1 .dot{color:var(--cobalt)}
+  .lock-card p{font-size:.9rem;color:var(--ink-soft);margin:8px 0 22px}
+  .lock-card form{display:flex;flex-direction:column;gap:12px}
+  .lock-card input{
+    font-family:inherit;font-size:1rem;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    text-align:center;
+    background:#FBFCFE;color:var(--ink);
+  }
+  .lock-card input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
+  .lock-err{color:#B3362B;font-size:.86rem;display:none;margin-top:2px}
+
+  /* ---- shared buttons ---- */
+  .btn{
+    font-family:inherit;font-size:.95rem;font-weight:600;
+    border-radius:9px;padding:11px 16px;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    border:1px solid transparent;
+    transition:background-color .15s ease;
+  }
+  .btn:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+  .btn-primary{background:var(--cobalt);color:#fff}
+  .btn-primary:hover{background:var(--cobalt-deep)}
+  .btn-copy{background:#fff;color:var(--ink);border-color:var(--line);font-size:.9rem;padding:9px 16px}
+  .btn-copy:hover{background:#F2F5F9}
+
+  /* ---- site list ---- */
+  #app{display:none}
+  header{padding:56px 0 36px;position:relative}
+  header h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-0.02em;line-height:1.1}
+  header h1 .dot{color:var(--cobalt)}
+  header p{margin-top:10px;color:var(--ink-soft);max-width:46ch;font-size:.98rem}
+  .lock-btn{
+    position:absolute;top:60px;right:0;
+    background:none;border:1px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:.85rem;color:var(--ink-soft);
+    padding:8px 14px;cursor:pointer;
+  }
+  .lock-btn:hover{color:var(--ink);background:#fff}
+
+  .grid{display:grid;gap:18px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    display:grid;grid-template-columns:72px 1fr;gap:18px;align-items:start;
+  }
+  .tile{
+    width:72px;height:72px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:1.7rem;color:#fff;user-select:none;
+  }
+  .tile.a{background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%)}
+  .tile.b{background:linear-gradient(135deg,var(--teal) 0 60%,var(--teal-deep) 60% 100%)}
+  .card h2{font-size:1.2rem;font-weight:700}
+  .url{display:block;font-size:.84rem;color:var(--ink-soft);word-break:break-all;margin:4px 0 6px}
+  .desc{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .link-gh{font-size:.86rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px}
+  .link-gh:hover{color:var(--ink)}
+
+  .fallback-box{display:none;margin-top:12px}
+  .fallback-box input{
+    width:100%;font-family:inherit;font-size:.85rem;
+    padding:9px 12px;border:1px solid var(--cobalt);border-radius:8px;
+    color:var(--ink);background:#FBFCFE;
+  }
+  .fallback-box label{font-size:.8rem;color:var(--ink-soft);display:block;margin-bottom:5px}
+
+  #toast{
+    position:fixed;left:50%;bottom:28px;
+    transform:translate(-50%,16px);
+    background:var(--ink);color:#fff;
+    font-size:.9rem;font-weight:500;
+    padding:12px 20px;border-radius:10px;
+    opacity:0;pointer-events:none;
+    transition:opacity .2s ease,transform .2s ease;
+    max-width:90vw;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion:reduce){#toast{transition:none}.btn{transition:none}}
+  @media (max-width:540px){
+    .card{grid-template-columns:1fr}
+    .tile{width:56px;height:56px;font-size:1.3rem}
+    .lock-btn{position:static;margin-top:14px}
+  }
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="lock-card">
+    <div class="lock-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+      </svg>
+    </div>
+    <h1>My Websites<span class="dot">.</span></h1>
+    <p>This page is locked. Enter the password to see the sites.</p>
+    <form id="lockForm">
+      <input id="pw" type="password" placeholder="Password" autocomplete="off" autofocus aria-label="Password">
+      <button type="submit" class="btn btn-primary" id="unlockBtn">Unlock</button>
+      <span class="lock-err" id="lockErr">Wrong password — try again.</span>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <header>
+      <h1>My Websites<span class="dot">.</span></h1>
+      <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
+      <button type="button" class="lock-btn" id="relock">Lock page</button>
+    </header>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // Site list, AES-256-GCM encrypted with the password (PBKDF2-SHA256, 310k rounds).
+  // Without the password this cannot be read.
+  var PAYLOAD = 'IuihpcOMvGb24tj8m7pI0mOVq2KTVcHcDzUjMqHH6Bs17xuMjZTtdxKwcdWIH6Z47r4XluHYO95Le58ACrox/CnnoOD7w8P5JmWcrBrYxbSGz/C71/+QukUIuORmnUNFqZ0JSFdHBiN3RbMLHlYFtXj/mrYHsGxNPEVvMYwhboD7h6OLpzHkkPn21AeedgmzCJG8M3EOgT4XTwkcI0v/XdBrtp/z7WwLh/KznXLmXTEmgasORvEptpurXwDNlJPoSjA1hqT7gtTPbUtistm9S6aXjT8AV/9Xum9nFXEuUtLJFG6hy0yUcGR399r5KrnXnH/JXmpDjbl+jLAeqDKf+HxWh+miegIfyPR6Tm/tP/+ECVVIlgLZcMkUh9KrTMUYjSwLL0h7DvZ3oRh2t6y7jLxo873gNec=';
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
+  }
+
+  function b64ToBytes(b64){
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function decrypt(password){
+    var data = b64ToBytes(PAYLOAD);
+    var salt = data.slice(0, 16);
+    var iv = data.slice(16, 28);
+    var ct = data.slice(28);
+    var keyMaterial = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    var key = await crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt: salt, iterations: 310000, hash:'SHA-256' },
+      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+    var pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: iv }, key, ct);
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+
+  function copyText(text, okMsg, card){
+    var done = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast(okMsg); })
+          .catch(function(){ showFallback(card, text); });
+        done = true;
+      }
+    } catch(e){}
+    if (!done) showFallback(card, text);
+  }
+
+  function showFallback(card, text){
+    if (!card){ toast('Copy blocked — long-press the address to copy it.'); return; }
+    var box = card.querySelector('.fallback-box');
+    if (!box) return;
+    box.style.display = 'block';
+    var inp = box.querySelector('input');
+    inp.value = text; inp.focus(); inp.select();
+    toast('Select and copy the link below.');
+  }
+
+  function render(sites){
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    sites.forEach(function(s, i){
+      var card = document.createElement('article');
+      card.className = 'card';
+
+      var tile = document.createElement('div');
+      tile.className = 'tile ' + (i % 2 === 0 ? 'a' : 'b');
+      tile.textContent = (s.name || '?').charAt(0).toUpperCase();
+      card.appendChild(tile);
+
+      var body = document.createElement('div');
+      var h = document.createElement('h2'); h.textContent = s.name; body.appendChild(h);
+      var u = document.createElement('span'); u.className = 'url'; u.textContent = s.siteUrl; body.appendChild(u);
+      if (s.desc){ var p = document.createElement('p'); p.className = 'desc'; p.textContent = s.desc; body.appendChild(p); }
+
+      var row = document.createElement('div'); row.className = 'actions';
+
+      var visit = document.createElement('a');
+      visit.className = 'btn btn-primary';
+      visit.href = s.siteUrl; visit.target = '_blank'; visit.rel = 'noopener';
+      visit.textContent = 'Visit site';
+      visit.addEventListener('click', function(){
+        copyText(s.siteUrl, 'Link copied — opening ' + s.name, card);
+      });
+      row.appendChild(visit);
+
+      var copy = document.createElement('button');
+      copy.className = 'btn btn-copy'; copy.type = 'button'; copy.textContent = 'Copy URL';
+      copy.addEventListener('click', function(){
+        copyText(s.siteUrl, 'Link copied: ' + s.siteUrl, card);
+      });
+      row.appendChild(copy);
+
+      if (s.repoUrl){
+        var gh = document.createElement('a');
+        gh.className = 'link-gh'; gh.href = s.repoUrl; gh.target = '_blank'; gh.rel = 'noopener';
+        gh.textContent = 'View on GitHub';
+        row.appendChild(gh);
+      }
+
+      body.appendChild(row);
+
+      var fb = document.createElement('div');
+      fb.className = 'fallback-box';
+      fb.innerHTML = '<label>Copy this link:</label><input type="text" readonly>';
+      body.appendChild(fb);
+
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  document.getElementById('lockForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var pwEl = document.getElementById('pw');
+    var err = document.getElementById('lockErr');
+    var btn = document.getElementById('unlockBtn');
+    err.style.display = 'none';
+    btn.textContent = 'Checking…'; btn.disabled = true;
+    decrypt(pwEl.value).then(function(sites){
+      render(sites);
+      document.getElementById('lock').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      pwEl.value = '';
+      btn.textContent = 'Unlock'; btn.disabled = false;
+    }).catch(function(){
+      btn.textContent = 'Unlock'; btn.disabled = false;
+      err.style.display = 'block';
+      pwEl.value = ''; pwEl.focus();
+    });
+  });
+
+  // Lock again on demand; closing or reloading the page also relocks,
+  // because nothing is ever stored.
+  document.getElementById('relock').addEventListener('click', function(){
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('lock').style.display = 'flex';
+    var pwEl = document.getElementById('pw');
+    pwEl.value = '';
+    try { pwEl.focus(); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
