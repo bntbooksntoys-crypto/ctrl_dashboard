@@ -21,7 +21,6 @@
     --radius:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{font-size:16px}
   body{
     font-family:'Sora',system-ui,sans-serif;
     background:var(--bg);
@@ -32,133 +31,96 @@
   }
   .wrap{max-width:880px;margin:0 auto}
 
-  header{padding:56px 0 36px}
-  header h1{
-    font-size:clamp(2rem,5vw,2.9rem);
-    font-weight:800;
-    letter-spacing:-0.02em;
-    line-height:1.1;
+  /* ---- lock screen ---- */
+  #lock{
+    min-height:88vh;
+    display:flex;align-items:center;justify-content:center;
   }
-  header h1 .dot{color:var(--cobalt)}
-  header p{
-    margin-top:10px;
-    color:var(--ink-soft);
-    max-width:46ch;
-    font-size:.98rem;
+  .lock-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:40px 34px;
+    width:100%;max-width:400px;
+    text-align:center;
   }
+  .lock-badge{
+    width:64px;height:64px;margin:0 auto 18px;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lock-badge svg{width:28px;height:28px;stroke:#fff}
+  .lock-card h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em}
+  .lock-card h1 .dot{color:var(--cobalt)}
+  .lock-card p{font-size:.9rem;color:var(--ink-soft);margin:8px 0 22px}
+  .lock-card form{display:flex;flex-direction:column;gap:12px}
+  .lock-card input{
+    font-family:inherit;font-size:1rem;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    text-align:center;
+    background:#FBFCFE;color:var(--ink);
+  }
+  .lock-card input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
+  .lock-err{color:#B3362B;font-size:.86rem;display:none;margin-top:2px}
 
-  .status{
-    font-size:.85rem;
-    color:var(--ink-soft);
-    padding:10px 0 18px;
+  /* ---- shared buttons ---- */
+  .btn{
+    font-family:inherit;font-size:.95rem;font-weight:600;
+    border-radius:9px;padding:11px 16px;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    border:1px solid transparent;
+    transition:background-color .15s ease;
   }
+  .btn:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+  .btn-primary{background:var(--cobalt);color:#fff}
+  .btn-primary:hover{background:var(--cobalt-deep)}
+  .btn-copy{background:#fff;color:var(--ink);border-color:var(--line);font-size:.9rem;padding:9px 16px}
+  .btn-copy:hover{background:#F2F5F9}
+
+  /* ---- site list ---- */
+  #app{display:none}
+  header{padding:56px 0 36px;position:relative}
+  header h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-0.02em;line-height:1.1}
+  header h1 .dot{color:var(--cobalt)}
+  header p{margin-top:10px;color:var(--ink-soft);max-width:46ch;font-size:.98rem}
+  .lock-btn{
+    position:absolute;top:60px;right:0;
+    background:none;border:1px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:.85rem;color:var(--ink-soft);
+    padding:8px 14px;cursor:pointer;
+  }
+  .lock-btn:hover{color:var(--ink);background:#fff}
 
   .grid{display:grid;gap:18px}
-
   .card{
     background:var(--card);
     border:1px solid var(--line);
     border-radius:var(--radius);
     padding:22px;
-    display:grid;
-    grid-template-columns:72px 1fr;
-    gap:18px;
-    align-items:start;
+    display:grid;grid-template-columns:72px 1fr;gap:18px;align-items:start;
   }
   .tile{
-    width:72px;height:72px;
-    border-radius:12px;
+    width:72px;height:72px;border-radius:12px;
     display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:1.7rem;color:#fff;
-    user-select:none;
+    font-weight:800;font-size:1.7rem;color:#fff;user-select:none;
   }
   .tile.a{background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%)}
   .tile.b{background:linear-gradient(135deg,var(--teal) 0 60%,var(--teal-deep) 60% 100%)}
-
-  .card h2{font-size:1.2rem;font-weight:700;letter-spacing:-0.01em}
-  .url{
-    display:block;
-    font-size:.84rem;
-    color:var(--ink-soft);
-    word-break:break-all;
-    margin:4px 0 6px;
-  }
+  .card h2{font-size:1.2rem;font-weight:700}
+  .url{display:block;font-size:.84rem;color:var(--ink-soft);word-break:break-all;margin:4px 0 6px}
   .desc{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px}
-
   .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-  .btn{
-    font-family:inherit;
-    font-size:.9rem;font-weight:600;
-    border-radius:9px;
-    padding:9px 16px;
-    cursor:pointer;
-    text-decoration:none;
-    display:inline-flex;align-items:center;gap:7px;
-    border:1px solid transparent;
-    transition:background-color .15s ease;
-  }
-  .btn:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
-  .btn-visit{background:var(--cobalt);color:#fff}
-  .btn-visit:hover{background:var(--cobalt-deep)}
-  .btn-copy{background:#fff;color:var(--ink);border-color:var(--line)}
-  .btn-copy:hover{background:#F2F5F9}
-  .link-gh{
-    font-size:.86rem;color:var(--ink-soft);
-    text-decoration:underline;text-underline-offset:3px;
-  }
+  .link-gh{font-size:.86rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px}
   .link-gh:hover{color:var(--ink)}
-  .link-remove{
-    font-size:.86rem;color:var(--ink-soft);
-    background:none;border:none;cursor:pointer;font-family:inherit;
-    text-decoration:underline;text-underline-offset:3px;
-    margin-left:auto;
-  }
-  .link-remove:hover{color:#B3362B}
-  .link-remove.arm{color:#B3362B;font-weight:600;text-decoration:none}
 
-  .empty{
-    background:var(--card);
-    border:1px dashed var(--line);
-    border-radius:var(--radius);
-    padding:36px 24px;
-    text-align:center;
-    color:var(--ink-soft);
-    font-size:.95rem;
-  }
-
-  .add{
-    margin-top:34px;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:22px;
-  }
-  .add h3{font-size:1.02rem;font-weight:700;margin-bottom:4px}
-  .add p{font-size:.86rem;color:var(--ink-soft);margin-bottom:14px}
-  .add form{display:flex;gap:10px;flex-wrap:wrap}
-  .add input{
-    flex:1;min-width:220px;
-    font-family:inherit;font-size:.92rem;
-    padding:10px 14px;
-    border:1px solid var(--line);
-    border-radius:9px;
-    color:var(--ink);
-    background:#FBFCFE;
-  }
-  .add input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
-  .add .hint{font-size:.8rem;color:var(--ink-soft);margin-top:10px;margin-bottom:0}
-  .add .err{color:#B3362B;font-size:.85rem;margin-top:10px;display:none}
-
-  .fallback-box{
-    display:none;
-    margin-top:12px;
-  }
+  .fallback-box{display:none;margin-top:12px}
   .fallback-box input{
-    width:100%;
-    font-family:inherit;font-size:.85rem;
-    padding:9px 12px;
-    border:1px solid var(--cobalt);
-    border-radius:8px;color:var(--ink);background:#FBFCFE;
+    width:100%;font-family:inherit;font-size:.85rem;
+    padding:9px 12px;border:1px solid var(--cobalt);border-radius:8px;
+    color:var(--ink);background:#FBFCFE;
   }
   .fallback-box label{font-size:.8rem;color:var(--ink-soft);display:block;margin-bottom:5px}
 
@@ -173,36 +135,43 @@
     max-width:90vw;
   }
   #toast.show{opacity:1;transform:translate(-50%,0)}
-  @media (prefers-reduced-motion:reduce){
-    #toast{transition:none}
-    .btn{transition:none}
-  }
+  @media (prefers-reduced-motion:reduce){#toast{transition:none}.btn{transition:none}}
   @media (max-width:540px){
     .card{grid-template-columns:1fr}
     .tile{width:56px;height:56px;font-size:1.3rem}
+    .lock-btn{position:static;margin-top:14px}
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
+
+<div id="lock">
+  <div class="lock-card">
+    <div class="lock-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+      </svg>
+    </div>
     <h1>My Websites<span class="dot">.</span></h1>
-    <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
-  </header>
-
-  <div class="status" id="status">Loading your sites…</div>
-  <div class="grid" id="grid"></div>
-
-  <section class="add">
-    <h3>Add a website</h3>
-    <p>Paste a GitHub repository link or the website's address. The live site link is worked out for you.</p>
-    <form id="addForm">
-      <input id="addInput" type="text" placeholder="https://github.com/you/your-project" aria-label="GitHub repository or website address">
-      <button type="submit" class="btn btn-visit">Add website</button>
+    <p>This page is locked. Enter the password to see the sites.</p>
+    <form id="lockForm">
+      <input id="pw" type="password" placeholder="Password" autocomplete="off" autofocus aria-label="Password">
+      <button type="submit" class="btn btn-primary" id="unlockBtn">Unlock</button>
+      <span class="lock-err" id="lockErr">Wrong password — try again.</span>
     </form>
-    <p class="hint">Works with github.com/owner/project links, owner.github.io/project links, or any website address.</p>
-    <p class="err" id="addErr"></p>
-  </section>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <header>
+      <h1>My Websites<span class="dot">.</span></h1>
+      <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
+      <button type="button" class="lock-btn" id="relock">Lock page</button>
+    </header>
+    <div class="grid" id="grid"></div>
+  </div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -211,26 +180,12 @@
 (function(){
   'use strict';
 
-  var DEFAULT_SITES = [
-    {
-      id:'qmaz-solutions',
-      name:'Qmaz Solutions',
-      siteUrl:'https://bntbooksntoys-crypto.github.io/qmaz-solutions/',
-      repoUrl:'https://bntbooksntoys-crypto.github.io/qmaz-solutions/',
-      desc:'AI agent dashboard — sign in and work with photos from your camera or files.',
-      createdAt:1
-    }
-  ];
+  // Site list, AES-256-GCM encrypted with the password (PBKDF2-SHA256, 310k rounds).
+  // Without the password this cannot be read.
+  var PAYLOAD = 'IuihpcOMvGb24tj8m7pI0mOVq2KTVcHcDzUjMqHH6Bs17xuMjZTtdxKwcdWIH6Z47r4XluHYO95Le58ACrox/CnnoOD7w8P5JmWcrBrYxbSGz/C71/+QukUIuORmnUNFqZ0JSFdHBiN3RbMLHlYFtXj/mrYHsGxNPEVvMYwhboD7h6OLpzHkkPn21AeedgmzCJG8M3EOgT4XTwkcI0v/XdBrtp/z7WwLh/KznXLmXTEmgasORvEptpurXwDNlJPoSjA1hqT7gtTPbUtistm9S6aXjT8AV/9Xum9nFXEuUtLJFG6hy0yUcGR399r5KrnXnH/JXmpDjbl+jLAeqDKf+HxWh+miegIfyPR6Tm/tP/+ECVVIlgLZcMkUh9KrTMUYjSwLL0h7DvZ3oRh2t6y7jLxo873gNec=';
 
-  var db = null;
-  var sites = [];
-  var versions = {};       // doc id -> version (for safe deletes)
-  var usingDb = false;
-  var grid = document.getElementById('grid');
-  var statusEl = document.getElementById('status');
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
-
   function toast(msg){
     toastEl.textContent = msg;
     toastEl.classList.add('show');
@@ -238,53 +193,35 @@
     toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2600);
   }
 
-  function pretty(s){
-    return s.replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()
-            .replace(/\b\w/g,function(c){ return c.toUpperCase(); });
+  function b64ToBytes(b64){
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
   }
 
-  function parseInput(raw){
-    raw = (raw||'').trim();
-    if(!raw) return null;
-    var href = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
-    var url;
-    try { url = new URL(href); } catch(e){ return null; }
-    var host = url.hostname.toLowerCase();
-    var parts = url.pathname.split('/').filter(Boolean);
-
-    if (host === 'github.com' && parts.length >= 2){
-      var owner = parts[0], repo = parts[1].replace(/\.git$/,'');
-      var site = (repo.toLowerCase() === (owner + '.github.io').toLowerCase())
-        ? 'https://' + owner + '.github.io/'
-        : 'https://' + owner + '.github.io/' + repo + '/';
-      return { name: pretty(repo), siteUrl: site,
-               repoUrl: 'https://github.com/' + owner + '/' + repo };
-    }
-    var m = host.match(/^([a-z0-9-]+)\.github\.io$/);
-    if (m){
-      var o = m[1];
-      if (parts.length >= 1){
-        return { name: pretty(parts[0]),
-                 siteUrl: 'https://' + o + '.github.io/' + parts[0] + '/',
-                 repoUrl: 'https://github.com/' + o + '/' + parts[0] };
-      }
-      return { name: pretty(o),
-               siteUrl: 'https://' + o + '.github.io/',
-               repoUrl: 'https://github.com/' + o + '/' + o + '.github.io' };
-    }
-    return { name: pretty(host.replace(/^www\./,'')), siteUrl: url.href, repoUrl: '' };
+  async function decrypt(password){
+    var data = b64ToBytes(PAYLOAD);
+    var salt = data.slice(0, 16);
+    var iv = data.slice(16, 28);
+    var ct = data.slice(28);
+    var keyMaterial = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    var key = await crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt: salt, iterations: 310000, hash:'SHA-256' },
+      keyMaterial, { name:'AES-GCM', length:256 }, false, ['decrypt']);
+    var pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv: iv }, key, ct);
+    return JSON.parse(new TextDecoder().decode(pt));
   }
 
   function copyText(text, okMsg, card){
     var done = false;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(text).then(function(){
-          toast(okMsg);
-        }).catch(function(){ showFallback(card, text); });
+        navigator.clipboard.writeText(text).then(function(){ toast(okMsg); })
+          .catch(function(){ showFallback(card, text); });
         done = true;
       }
-    } catch(e){ /* fall through */ }
+    } catch(e){}
     if (!done) showFallback(card, text);
   }
 
@@ -294,21 +231,13 @@
     if (!box) return;
     box.style.display = 'block';
     var inp = box.querySelector('input');
-    inp.value = text;
-    inp.focus();
-    inp.select();
+    inp.value = text; inp.focus(); inp.select();
     toast('Select and copy the link below.');
   }
 
-  function render(){
+  function render(sites){
+    var grid = document.getElementById('grid');
     grid.innerHTML = '';
-    if (!sites.length){
-      var d = document.createElement('div');
-      d.className = 'empty';
-      d.textContent = 'No websites yet. Add your first one below — paste a GitHub link and it appears here.';
-      grid.appendChild(d);
-      return;
-    }
     sites.forEach(function(s, i){
       var card = document.createElement('article');
       card.className = 'card';
@@ -319,41 +248,23 @@
       card.appendChild(tile);
 
       var body = document.createElement('div');
+      var h = document.createElement('h2'); h.textContent = s.name; body.appendChild(h);
+      var u = document.createElement('span'); u.className = 'url'; u.textContent = s.siteUrl; body.appendChild(u);
+      if (s.desc){ var p = document.createElement('p'); p.className = 'desc'; p.textContent = s.desc; body.appendChild(p); }
 
-      var h = document.createElement('h2');
-      h.textContent = s.name || 'Untitled site';
-      body.appendChild(h);
-
-      var u = document.createElement('span');
-      u.className = 'url';
-      u.textContent = s.siteUrl;
-      body.appendChild(u);
-
-      if (s.desc){
-        var p = document.createElement('p');
-        p.className = 'desc';
-        p.textContent = s.desc;
-        body.appendChild(p);
-      }
-
-      var row = document.createElement('div');
-      row.className = 'actions';
+      var row = document.createElement('div'); row.className = 'actions';
 
       var visit = document.createElement('a');
-      visit.className = 'btn btn-visit';
-      visit.href = s.siteUrl;
-      visit.target = '_blank';
-      visit.rel = 'noopener';
+      visit.className = 'btn btn-primary';
+      visit.href = s.siteUrl; visit.target = '_blank'; visit.rel = 'noopener';
       visit.textContent = 'Visit site';
       visit.addEventListener('click', function(){
-        copyText(s.siteUrl, 'Link copied — opening ' + (s.name || 'site'), card);
+        copyText(s.siteUrl, 'Link copied — opening ' + s.name, card);
       });
       row.appendChild(visit);
 
       var copy = document.createElement('button');
-      copy.className = 'btn btn-copy';
-      copy.type = 'button';
-      copy.textContent = 'Copy URL';
+      copy.className = 'btn btn-copy'; copy.type = 'button'; copy.textContent = 'Copy URL';
       copy.addEventListener('click', function(){
         copyText(s.siteUrl, 'Link copied: ' + s.siteUrl, card);
       });
@@ -361,31 +272,10 @@
 
       if (s.repoUrl){
         var gh = document.createElement('a');
-        gh.className = 'link-gh';
-        gh.href = s.repoUrl;
-        gh.target = '_blank';
-        gh.rel = 'noopener';
+        gh.className = 'link-gh'; gh.href = s.repoUrl; gh.target = '_blank'; gh.rel = 'noopener';
         gh.textContent = 'View on GitHub';
         row.appendChild(gh);
       }
-
-      var rm = document.createElement('button');
-      rm.className = 'link-remove';
-      rm.type = 'button';
-      rm.textContent = 'Remove';
-      rm.addEventListener('click', function(){
-        if (!rm.classList.contains('arm')){
-          rm.classList.add('arm');
-          rm.textContent = 'Remove — sure?';
-          setTimeout(function(){
-            rm.classList.remove('arm');
-            rm.textContent = 'Remove';
-          }, 3500);
-          return;
-        }
-        removeSite(s);
-      });
-      row.appendChild(rm);
 
       body.appendChild(row);
 
@@ -399,114 +289,36 @@
     });
   }
 
-  function removeSite(s){
-    if (usingDb && db){
-      var op = { op:'delete', path:'sites/' + s.id };
-      if (versions[s.id]) op.ifVersion = versions[s.id];
-      db.doc('sites/' + s.id).delete().then(function(){
-        toast('Removed ' + (s.name || 'site'));
-      }).catch(function(){
-        toast("Couldn't remove it — try again in a moment.");
-      });
-    } else {
-      sites = sites.filter(function(x){ return x.id !== s.id; });
-      render();
-      toast('Removed ' + (s.name || 'site') + ' (this browser only)');
-    }
-  }
-
-  function addSite(parsed){
-    var id = (parsed.name || 'site').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')
-             + '-' + Math.random().toString(36).slice(2,7);
-    var doc = {
-      name: parsed.name,
-      siteUrl: parsed.siteUrl,
-      repoUrl: parsed.repoUrl || '',
-      desc: '',
-      createdAt: Date.now()
-    };
-    if (usingDb && db){
-      db.doc('sites/' + id).set(doc).then(function(){
-        toast('Added ' + parsed.name);
-      }).catch(function(){
-        toast("Couldn't save it — check you're signed in and try again.");
-      });
-    } else {
-      doc.id = id;
-      sites.push(doc);
-      render();
-      toast('Added ' + parsed.name + ' (not saved — sign in to keep changes)');
-    }
-  }
-
-  document.getElementById('addForm').addEventListener('submit', function(ev){
+  document.getElementById('lockForm').addEventListener('submit', function(ev){
     ev.preventDefault();
-    var inp = document.getElementById('addInput');
-    var err = document.getElementById('addErr');
-    var parsed = parseInput(inp.value);
-    if (!parsed){
-      err.textContent = "That doesn't look like a link. Paste something like https://github.com/you/your-project";
-      err.style.display = 'block';
-      return;
-    }
+    var pwEl = document.getElementById('pw');
+    var err = document.getElementById('lockErr');
+    var btn = document.getElementById('unlockBtn');
     err.style.display = 'none';
-    addSite(parsed);
-    inp.value = '';
+    btn.textContent = 'Checking…'; btn.disabled = true;
+    decrypt(pwEl.value).then(function(sites){
+      render(sites);
+      document.getElementById('lock').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      pwEl.value = '';
+      btn.textContent = 'Unlock'; btn.disabled = false;
+    }).catch(function(){
+      btn.textContent = 'Unlock'; btn.disabled = false;
+      err.style.display = 'block';
+      pwEl.value = ''; pwEl.focus();
+    });
   });
 
-  // --- data loading ---
-  var settled = false;
-  function useFallback(msg){
-    if (settled && usingDb) return;
-    settled = true;
-    usingDb = false;
-    sites = DEFAULT_SITES.slice();
-    statusEl.textContent = msg || '';
-    if (!msg) statusEl.style.display = 'none';
-    render();
-  }
-
-  var loadTimer = setTimeout(function(){
-    useFallback('Showing your saved list. New additions here last only until you leave the page.');
-  }, 10000);
-
-  if (window.claude && window.claude.use){
-    window.claude.use('db').then(function(d){
-      if (!d){
-        clearTimeout(loadTimer);
-        useFallback('Showing your saved list. Sign in on claude.ai to add or remove sites.');
-        return;
-      }
-      db = d;
-      usingDb = true;
-      try {
-        db.collection('sites').orderBy('createdAt').onSnapshot(function(snap){
-          clearTimeout(loadTimer);
-          settled = true;
-          var list = [];
-          versions = {};
-          snap.forEach(function(docSnap){
-            var data = docSnap.data();
-            data.id = docSnap.id;
-            if (docSnap.version) versions[docSnap.id] = docSnap.version;
-            list.push(data);
-          });
-          sites = list;
-          statusEl.style.display = 'none';
-          render();
-        }, function(){
-          clearTimeout(loadTimer);
-          useFallback('Showing your saved list. Changes here last only until you leave the page.');
-        });
-      } catch(e){
-        clearTimeout(loadTimer);
-        useFallback('Showing your saved list. Changes here last only until you leave the page.');
-      }
-    });
-  } else {
-    clearTimeout(loadTimer);
-    useFallback('');
-  }
+  // Lock again on demand; closing or reloading the page also relocks,
+  // because nothing is ever stored.
+  document.getElementById('relock').addEventListener('click', function(){
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('lock').style.display = 'flex';
+    var pwEl = document.getElementById('pw');
+    pwEl.value = '';
+    try { pwEl.focus(); } catch(e){}
+  });
 })();
 </script>
 </body>
