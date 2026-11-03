@@ -77,6 +77,9 @@
   .btn-primary:disabled{opacity:.6;cursor:default}
   .btn-copy{background:#fff;color:var(--ink);border-color:var(--line);font-size:.9rem;padding:9px 16px}
   .btn-copy:hover{background:#F2F5F9}
+  .btn-run{background:var(--teal);color:#fff;font-size:.9rem;padding:9px 16px}
+  .btn-run:hover{background:var(--teal-deep)}
+  .btn-run:disabled{opacity:.6;cursor:default}
 
   /* ---- site list ---- */
   #app{display:none}
@@ -252,7 +255,10 @@
   var viewPw = null;   // kept only in memory while unlocked; gone on close or reload
   var adminPw = null;
   var sites = [];
+  var sitesJson = '';
   var adminOpen = false;
+  var lastRunAt = 0;   // newest Run command this device has already obeyed
+  var pollTimer = null;
 
   var toastEl = document.getElementById('toast');
   var toastTimer = null;
@@ -273,6 +279,31 @@
       headers:{ 'Content-Type':'text/plain;charset=utf-8' },
       body: JSON.stringify(body)
     }).then(function(res){ return res.json(); });
+  }
+
+  // Every 5 seconds, ask the Google Sheet for list changes and Run commands.
+  function startPoll(){
+    stopPoll();
+    pollTimer = setInterval(function(){
+      if (!viewPw) return;
+      apiGet(viewPw).then(function(data){
+        if (!data || !data.ok) return;
+        var j = JSON.stringify(data.sites || []);
+        if (j !== sitesJson){
+          sitesJson = j;
+          sites = data.sites || [];
+          render();
+        }
+        if (data.run && data.run.url && Number(data.run.at) > lastRunAt){
+          lastRunAt = Number(data.run.at);
+          toast('Run command received — opening site');
+          window.location.href = data.run.url;
+        }
+      }).catch(function(){ /* offline moment — try again next tick */ });
+    }, 5000);
+  }
+  function stopPoll(){
+    if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   }
 
   function pretty(s){
@@ -381,6 +412,27 @@
       }
 
       if (adminOpen){
+        var runBtn = document.createElement('button');
+        runBtn.className = 'btn btn-run'; runBtn.type = 'button'; runBtn.textContent = 'Run';
+        runBtn.title = 'Open this site on every device viewing this page';
+        runBtn.addEventListener('click', function(){
+          runBtn.disabled = true; runBtn.textContent = 'Running…';
+          apiPost({ adminPw: adminPw, action:'run', siteUrl: s.siteUrl }).then(function(data){
+            runBtn.disabled = false; runBtn.textContent = 'Run';
+            if (data && data.ok){
+              lastRunAt = Number(data.at) || Date.now();
+              toast('Running ' + (s.name || 'site') + ' on all devices');
+              try { window.open(s.siteUrl, '_blank', 'noopener'); } catch(e){}
+            } else {
+              toast("Couldn't send Run — try again.");
+            }
+          }).catch(function(){
+            runBtn.disabled = false; runBtn.textContent = 'Run';
+            toast("Couldn't reach your list — check the internet.");
+          });
+        });
+        row.appendChild(runBtn);
+
         var rm = document.createElement('button');
         rm.className = 'link-remove'; rm.type = 'button'; rm.textContent = 'Remove';
         rm.addEventListener('click', function(){
@@ -393,6 +445,7 @@
           apiPost({ adminPw: adminPw, action:'remove', siteUrl: s.siteUrl }).then(function(data){
             if (data && data.ok){
               sites = data.sites || [];
+              sitesJson = JSON.stringify(sites);
               render();
               toast('Removed ' + (s.name || 'site') + ' for everyone');
             } else {
@@ -433,7 +486,10 @@
       if (data && data.ok){
         viewPw = pwVal;
         sites = data.sites || [];
+        sitesJson = JSON.stringify(sites);
+        lastRunAt = (data.run && Number(data.run.at)) || 0; // ignore commands sent before this unlock
         render();
+        startPoll();
         document.getElementById('lock').style.display = 'none';
         document.getElementById('app').style.display = 'block';
         pwEl.value = '';
@@ -477,7 +533,7 @@
     apiPost({ adminPw: pwVal, action:'verify' }).then(function(data){
       btn.textContent = 'Open'; btn.disabled = false;
       pwEl.value = '';
-      if (data && data.error === 'unknown action'){
+      if (data && (data.verified || data.error === 'unknown action')){
         adminPw = pwVal;
         adminOpen = true;
         document.getElementById('adminGate').style.display = 'none';
@@ -515,6 +571,7 @@
       btn.textContent = 'Add website'; btn.disabled = false;
       if (data && data.ok){
         sites = data.sites || [];
+        sitesJson = JSON.stringify(sites);
         render();
         inp.value = '';
         toast('Added ' + parsed.name + ' — visible to everyone');
