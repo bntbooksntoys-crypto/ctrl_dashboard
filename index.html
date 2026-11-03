@@ -1,100 +1,605 @@
-// My Websites — Google Apps Script backend (version 2: with Run on all devices)
-// Stores the site list in this Google Sheet, checks both passwords on Google's
-// servers, and carries the "Run" command that every open dashboard obeys.
-
-var SHEET_NAME = 'sites';
-var VIEW_PW = '5442252';   // password to see the list
-var ADMIN_PW = '5905018';  // password to add, remove, or run sites
-
-function getSheet_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) {
-    sh = ss.insertSheet(SHEET_NAME);
-    sh.appendRow(['name', 'siteUrl', 'repoUrl', 'desc']);
-    sh.appendRow(['Qmaz Solutions',
-      'https://bntbooksntoys-crypto.github.io/qmaz-solutions/',
-      'https://github.com/bntbooksntoys-crypto/qmaz-solutions',
-      'EdTech platform — learn in English, Tamil, Hindi and more languages.']);
-    sh.appendRow(['Bntbooksandtoys',
-      'https://bntbooksntoys-crypto.github.io/bntbooksandtoys/',
-      'https://github.com/bntbooksntoys-crypto/bntbooksandtoys',
-      '']);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Websites</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E8EDF3;
+    --card:#FFFFFF;
+    --ink:#192436;
+    --ink-soft:#5B6B82;
+    --line:#D4DCE6;
+    --cobalt:#1D5BDC;
+    --cobalt-deep:#1546A8;
+    --teal:#0FA38A;
+    --teal-deep:#0B7D6A;
+    --radius:14px;
   }
-  return sh;
-}
-
-function getControl_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('control');
-  if (!sh) {
-    sh = ss.insertSheet('control');
-    sh.getRange('A1:B1').setValues([['', 0]]);
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Sora',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:0 20px 80px;
+    line-height:1.55;
   }
-  return sh;
-}
+  .wrap{max-width:880px;margin:0 auto}
 
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+  /* ---- lock screen ---- */
+  #lock{min-height:88vh;display:flex;align-items:center;justify-content:center}
+  .lock-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:40px 34px;
+    width:100%;max-width:400px;
+    text-align:center;
+  }
+  .lock-badge{
+    width:64px;height:64px;margin:0 auto 18px;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lock-badge svg{width:28px;height:28px;stroke:#fff}
+  .lock-card h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em}
+  .lock-card h1 .dot{color:var(--cobalt)}
+  .lock-card p{font-size:.9rem;color:var(--ink-soft);margin:8px 0 22px}
+  .lock-card form{display:flex;flex-direction:column;gap:12px}
+  .lock-card input{
+    font-family:inherit;font-size:1rem;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    text-align:center;
+    background:#FBFCFE;color:var(--ink);
+  }
+  .lock-card input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
+  .lock-err{color:#B3362B;font-size:.86rem;display:none;margin-top:2px}
 
-function listSites_() {
-  var rows = getSheet_().getDataRange().getValues();
-  var out = [];
-  for (var i = 1; i < rows.length; i++) {
-    if (!rows[i][1]) continue;
-    out.push({
-      name: String(rows[i][0] || ''),
-      siteUrl: String(rows[i][1]),
-      repoUrl: String(rows[i][2] || ''),
-      desc: String(rows[i][3] || '')
+  /* ---- buttons ---- */
+  .btn{
+    font-family:inherit;font-size:.95rem;font-weight:600;
+    border-radius:9px;padding:11px 16px;cursor:pointer;
+    text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    border:1px solid transparent;
+    transition:background-color .15s ease;
+  }
+  .btn:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+  .btn-primary{background:var(--cobalt);color:#fff}
+  .btn-primary:hover{background:var(--cobalt-deep)}
+  .btn-primary:disabled{opacity:.6;cursor:default}
+  .btn-copy{background:#fff;color:var(--ink);border-color:var(--line);font-size:.9rem;padding:9px 16px}
+  .btn-copy:hover{background:#F2F5F9}
+  .btn-run{background:var(--teal);color:#fff;font-size:.9rem;padding:9px 16px}
+  .btn-run:hover{background:var(--teal-deep)}
+  .btn-run:disabled{opacity:.6;cursor:default}
+
+  /* ---- site list ---- */
+  #app{display:none}
+  header{padding:56px 0 36px;position:relative}
+  header h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:800;letter-spacing:-0.02em;line-height:1.1}
+  header h1 .dot{color:var(--cobalt)}
+  header p{margin-top:10px;color:var(--ink-soft);max-width:46ch;font-size:.98rem}
+  .head-actions{position:absolute;top:60px;right:0;display:flex;gap:10px}
+  .head-btn{
+    background:none;border:1px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:.85rem;color:var(--ink-soft);
+    padding:8px 14px;cursor:pointer;
+  }
+  .head-btn:hover{color:var(--ink);background:#fff}
+
+  .grid{display:grid;gap:18px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+    display:grid;grid-template-columns:72px 1fr;gap:18px;align-items:start;
+  }
+  .tile{
+    width:72px;height:72px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:1.7rem;color:#fff;user-select:none;
+  }
+  .tile.a{background:linear-gradient(135deg,var(--cobalt) 0 60%,var(--cobalt-deep) 60% 100%)}
+  .tile.b{background:linear-gradient(135deg,var(--teal) 0 60%,var(--teal-deep) 60% 100%)}
+  .card h2{font-size:1.2rem;font-weight:700}
+  .url{display:block;font-size:.84rem;color:var(--ink-soft);word-break:break-all;margin:4px 0 6px}
+  .desc{font-size:.92rem;color:var(--ink-soft);margin-bottom:14px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .link-gh{font-size:.86rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px}
+  .link-gh:hover{color:var(--ink)}
+  .link-remove{
+    font-size:.86rem;color:var(--ink-soft);
+    background:none;border:none;cursor:pointer;font-family:inherit;
+    text-decoration:underline;text-underline-offset:3px;margin-left:auto;
+  }
+  .link-remove:hover{color:#B3362B}
+  .link-remove.arm{color:#B3362B;font-weight:600;text-decoration:none}
+
+  .notice{
+    background:var(--card);
+    border:1px dashed var(--line);
+    border-radius:var(--radius);
+    padding:30px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:.95rem;
+  }
+
+  .fallback-box{display:none;margin-top:12px}
+  .fallback-box input{
+    width:100%;font-family:inherit;font-size:.85rem;
+    padding:9px 12px;border:1px solid var(--cobalt);border-radius:8px;
+    color:var(--ink);background:#FBFCFE;
+  }
+  .fallback-box label{font-size:.8rem;color:var(--ink-soft);display:block;margin-bottom:5px}
+
+  /* ---- admin / add section ---- */
+  .admin{
+    margin-top:34px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .admin h3{font-size:1.02rem;font-weight:700;margin-bottom:4px}
+  .admin p{font-size:.86rem;color:var(--ink-soft);margin-bottom:14px}
+  .admin form{display:flex;gap:10px;flex-wrap:wrap}
+  .admin input{
+    flex:1;min-width:200px;
+    font-family:inherit;font-size:.92rem;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    color:var(--ink);background:#FBFCFE;
+  }
+  .admin input:focus{outline:3px solid var(--cobalt);outline-offset:1px;border-color:var(--cobalt)}
+  .admin .hint{font-size:.8rem;color:var(--ink-soft);margin-top:10px;margin-bottom:0}
+  .admin .err{color:#B3362B;font-size:.85rem;margin-top:10px;display:none}
+  #adminGate{display:none}
+  #addPanel{display:none}
+
+  #toast{
+    position:fixed;left:50%;bottom:28px;
+    transform:translate(-50%,16px);
+    background:var(--ink);color:#fff;
+    font-size:.9rem;font-weight:500;
+    padding:12px 20px;border-radius:10px;
+    opacity:0;pointer-events:none;
+    transition:opacity .2s ease,transform .2s ease;
+    max-width:90vw;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (prefers-reduced-motion:reduce){#toast{transition:none}.btn{transition:none}}
+  @media (max-width:540px){
+    .card{grid-template-columns:1fr}
+    .tile{width:56px;height:56px;font-size:1.3rem}
+    .head-actions{position:static;margin-top:14px}
+  }
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="lock-card">
+    <div class="lock-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+      </svg>
+    </div>
+    <h1>My Websites<span class="dot">.</span></h1>
+    <p>This page is locked. Enter the password to see the sites.</p>
+    <form id="lockForm">
+      <input id="pw" type="password" placeholder="Password" autocomplete="off" autofocus aria-label="Password">
+      <button type="submit" class="btn btn-primary" id="unlockBtn">Unlock</button>
+      <span class="lock-err" id="lockErr">Wrong password — try again.</span>
+    </form>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <header>
+      <h1>My Websites<span class="dot">.</span></h1>
+      <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
+      <div class="head-actions">
+        <button type="button" class="head-btn" id="adminBtn">Add pages</button>
+        <button type="button" class="head-btn" id="relock">Lock page</button>
+      </div>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <section class="admin" id="adminGate">
+      <h3>Add pages</h3>
+      <p>Enter the admin password to add or remove websites.</p>
+      <form id="adminForm">
+        <input id="adminPwInput" type="password" placeholder="Admin password" autocomplete="off" aria-label="Admin password">
+        <button type="submit" class="btn btn-primary" id="adminUnlockBtn">Open</button>
+      </form>
+      <p class="err" id="adminErr">Wrong admin password.</p>
+    </section>
+
+    <section class="admin" id="addPanel">
+      <h3>Add a website</h3>
+      <p>Paste a GitHub repository link or the website's address. The live site link is worked out for you.</p>
+      <form id="addForm">
+        <input id="addInput" type="text" placeholder="https://github.com/you/your-project" aria-label="GitHub repository or website address">
+        <button type="submit" class="btn btn-primary" id="addBtn">Add website</button>
+      </form>
+      <p class="hint">Saved to your Google Sheet — everyone sees it, on every device.</p>
+      <p class="err" id="addErr"></p>
+    </section>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // Your Google Apps Script web app. It keeps the list in your Google Sheet
+  // and checks both passwords on Google's servers — no password is in this file.
+  var API = 'https://script.google.com/macros/s/AKfycbxY4cp66xInhzCfbt1j2jcPlFqOHjrOlgFrt_4pQMWke2EwLp9wPbpl5PbqJJQlYbfP/exec';
+
+  var viewPw = null;   // kept only in memory while unlocked; gone on close or reload
+  var adminPw = null;
+  var sites = [];
+  var sitesJson = '';
+  var adminOpen = false;
+  var lastRunAt = 0;   // newest Run command this device has already obeyed
+  var pollTimer = null;
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('show'); }, 2800);
+  }
+
+  function apiGet(pw){
+    return fetch(API + '?pw=' + encodeURIComponent(pw), { method:'GET' })
+      .then(function(res){ return res.json(); });
+  }
+  function apiPost(body){
+    return fetch(API, {
+      method:'POST',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    }).then(function(res){ return res.json(); });
+  }
+
+  // Every 5 seconds, ask the Google Sheet for list changes and Run commands.
+  function startPoll(){
+    stopPoll();
+    pollTimer = setInterval(function(){
+      if (!viewPw) return;
+      apiGet(viewPw).then(function(data){
+        if (!data || !data.ok) return;
+        var j = JSON.stringify(data.sites || []);
+        if (j !== sitesJson){
+          sitesJson = j;
+          sites = data.sites || [];
+          render();
+        }
+        if (data.run && data.run.url && Number(data.run.at) > lastRunAt){
+          lastRunAt = Number(data.run.at);
+          toast('Run command received — opening site');
+          window.location.href = data.run.url;
+        }
+      }).catch(function(){ /* offline moment — try again next tick */ });
+    }, 5000);
+  }
+  function stopPoll(){
+    if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  function pretty(s){
+    return s.replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()
+            .replace(/\b\w/g,function(c){ return c.toUpperCase(); });
+  }
+
+  function parseInput(raw){
+    raw = (raw||'').trim();
+    if (!raw) return null;
+    var href = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+    var url;
+    try { url = new URL(href); } catch(e){ return null; }
+    var host = url.hostname.toLowerCase();
+    var parts = url.pathname.split('/').filter(Boolean);
+    if (host === 'github.com' && parts.length >= 2){
+      var owner = parts[0], repo = parts[1].replace(/\.git$/,'');
+      var site = (repo.toLowerCase() === (owner + '.github.io').toLowerCase())
+        ? 'https://' + owner + '.github.io/'
+        : 'https://' + owner + '.github.io/' + repo + '/';
+      return { name: pretty(repo), siteUrl: site, repoUrl: 'https://github.com/' + owner + '/' + repo, desc:'' };
+    }
+    var m = host.match(/^([a-z0-9-]+)\.github\.io$/);
+    if (m){
+      var o = m[1];
+      if (parts.length >= 1){
+        return { name: pretty(parts[0]),
+                 siteUrl: 'https://' + o + '.github.io/' + parts[0] + '/',
+                 repoUrl: 'https://github.com/' + o + '/' + parts[0], desc:'' };
+      }
+      return { name: pretty(o), siteUrl: 'https://' + o + '.github.io/',
+               repoUrl: 'https://github.com/' + o + '/' + o + '.github.io', desc:'' };
+    }
+    return { name: pretty(host.replace(/^www\./,'')), siteUrl: url.href, repoUrl: '', desc:'' };
+  }
+
+  function copyText(text, okMsg, card){
+    var done = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ toast(okMsg); })
+          .catch(function(){ showFallback(card, text); });
+        done = true;
+      }
+    } catch(e){}
+    if (!done) showFallback(card, text);
+  }
+
+  function showFallback(card, text){
+    if (!card){ toast('Copy blocked — long-press the address to copy it.'); return; }
+    var box = card.querySelector('.fallback-box');
+    if (!box) return;
+    box.style.display = 'block';
+    var inp = box.querySelector('input');
+    inp.value = text; inp.focus(); inp.select();
+    toast('Select and copy the link below.');
+  }
+
+  function render(){
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if (!sites.length){
+      var d = document.createElement('div');
+      d.className = 'notice';
+      d.textContent = 'No websites yet. Use Add pages (top right) to add the first one.';
+      grid.appendChild(d);
+      return;
+    }
+    sites.forEach(function(s, i){
+      var card = document.createElement('article');
+      card.className = 'card';
+
+      var tile = document.createElement('div');
+      tile.className = 'tile ' + (i % 2 === 0 ? 'a' : 'b');
+      tile.textContent = (s.name || '?').charAt(0).toUpperCase();
+      card.appendChild(tile);
+
+      var body = document.createElement('div');
+      var h = document.createElement('h2'); h.textContent = s.name || 'Untitled site'; body.appendChild(h);
+      var u = document.createElement('span'); u.className = 'url'; u.textContent = s.siteUrl; body.appendChild(u);
+      if (s.desc){ var p = document.createElement('p'); p.className = 'desc'; p.textContent = s.desc; body.appendChild(p); }
+
+      var row = document.createElement('div'); row.className = 'actions';
+
+      var visit = document.createElement('a');
+      visit.className = 'btn btn-primary';
+      visit.href = s.siteUrl; visit.target = '_blank'; visit.rel = 'noopener';
+      visit.textContent = 'Visit site';
+      visit.addEventListener('click', function(){
+        copyText(s.siteUrl, 'Link copied — opening ' + (s.name || 'site'), card);
+      });
+      row.appendChild(visit);
+
+      var copy = document.createElement('button');
+      copy.className = 'btn btn-copy'; copy.type = 'button'; copy.textContent = 'Copy URL';
+      copy.addEventListener('click', function(){
+        copyText(s.siteUrl, 'Link copied: ' + s.siteUrl, card);
+      });
+      row.appendChild(copy);
+
+      if (s.repoUrl){
+        var gh = document.createElement('a');
+        gh.className = 'link-gh'; gh.href = s.repoUrl; gh.target = '_blank'; gh.rel = 'noopener';
+        gh.textContent = 'View on GitHub';
+        row.appendChild(gh);
+      }
+
+      if (adminOpen){
+        var runBtn = document.createElement('button');
+        runBtn.className = 'btn btn-run'; runBtn.type = 'button'; runBtn.textContent = 'Run';
+        runBtn.title = 'Open this site on every device viewing this page';
+        runBtn.addEventListener('click', function(){
+          runBtn.disabled = true; runBtn.textContent = 'Running…';
+          apiPost({ adminPw: adminPw, action:'run', siteUrl: s.siteUrl }).then(function(data){
+            runBtn.disabled = false; runBtn.textContent = 'Run';
+            if (data && data.ok){
+              lastRunAt = Number(data.at) || Date.now();
+              toast('Running ' + (s.name || 'site') + ' on all devices');
+              try { window.open(s.siteUrl, '_blank', 'noopener'); } catch(e){}
+            } else {
+              toast("Couldn't send Run — try again.");
+            }
+          }).catch(function(){
+            runBtn.disabled = false; runBtn.textContent = 'Run';
+            toast("Couldn't reach your list — check the internet.");
+          });
+        });
+        row.appendChild(runBtn);
+
+        var rm = document.createElement('button');
+        rm.className = 'link-remove'; rm.type = 'button'; rm.textContent = 'Remove';
+        rm.addEventListener('click', function(){
+          if (!rm.classList.contains('arm')){
+            rm.classList.add('arm'); rm.textContent = 'Remove — sure?';
+            setTimeout(function(){ rm.classList.remove('arm'); rm.textContent = 'Remove'; }, 3500);
+            return;
+          }
+          rm.disabled = true;
+          apiPost({ adminPw: adminPw, action:'remove', siteUrl: s.siteUrl }).then(function(data){
+            if (data && data.ok){
+              sites = data.sites || [];
+              sitesJson = JSON.stringify(sites);
+              render();
+              toast('Removed ' + (s.name || 'site') + ' for everyone');
+            } else {
+              rm.disabled = false;
+              toast("Couldn't remove it — try again.");
+            }
+          }).catch(function(){
+            rm.disabled = false;
+            toast("Couldn't reach your list — check the internet and try again.");
+          });
+        });
+        row.appendChild(rm);
+      }
+
+      body.appendChild(row);
+
+      var fb = document.createElement('div');
+      fb.className = 'fallback-box';
+      fb.innerHTML = '<label>Copy this link:</label><input type="text" readonly>';
+      body.appendChild(fb);
+
+      card.appendChild(body);
+      grid.appendChild(card);
     });
   }
-  return out;
-}
 
-function readRun_() {
-  var sh = getControl_();
-  return {
-    url: String(sh.getRange('A1').getValue() || ''),
-    at: Number(sh.getRange('B1').getValue() || 0)
-  };
-}
+  // ---- view unlock ----
+  document.getElementById('lockForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var pwEl = document.getElementById('pw');
+    var err = document.getElementById('lockErr');
+    var btn = document.getElementById('unlockBtn');
+    err.style.display = 'none';
+    btn.textContent = 'Checking…'; btn.disabled = true;
+    var pwVal = pwEl.value;
+    apiGet(pwVal).then(function(data){
+      btn.textContent = 'Unlock'; btn.disabled = false;
+      if (data && data.ok){
+        viewPw = pwVal;
+        sites = data.sites || [];
+        sitesJson = JSON.stringify(sites);
+        lastRunAt = (data.run && Number(data.run.at)) || 0; // ignore commands sent before this unlock
+        render();
+        startPoll();
+        document.getElementById('lock').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        pwEl.value = '';
+      } else {
+        err.textContent = 'Wrong password — try again.';
+        err.style.display = 'block';
+        pwEl.value = ''; pwEl.focus();
+      }
+    }).catch(function(){
+      btn.textContent = 'Unlock'; btn.disabled = false;
+      err.textContent = "Couldn't reach the list — check your internet and try again.";
+      err.style.display = 'block';
+    });
+  });
 
-// Read the list and the current Run command (needs the view password)
-function doGet(e) {
-  var pw = (e && e.parameter && e.parameter.pw) || '';
-  if (pw !== VIEW_PW) return json_({ ok: false, error: 'wrong password' });
-  return json_({ ok: true, sites: listSites_(), run: readRun_() });
-}
-
-// Add, remove, run, or verify (needs the admin password)
-function doPost(e) {
-  var body = {};
-  try { body = JSON.parse(e.postData.contents); } catch (err) {}
-  if (body.adminPw !== ADMIN_PW) return json_({ ok: false, error: 'wrong admin password' });
-
-  if (body.action === 'verify') {
-    return json_({ ok: true, verified: true });
-  }
-
-  var sh = getSheet_();
-  if (body.action === 'add' && body.site && body.site.siteUrl) {
-    sh.appendRow([body.site.name || '', body.site.siteUrl, body.site.repoUrl || '', body.site.desc || '']);
-    return json_({ ok: true, sites: listSites_() });
-  }
-  if (body.action === 'remove' && body.siteUrl) {
-    var rows = sh.getDataRange().getValues();
-    for (var i = rows.length - 1; i >= 1; i--) {
-      if (rows[i][1] === body.siteUrl) sh.deleteRow(i + 1);
+  // ---- admin gate ----
+  document.getElementById('adminBtn').addEventListener('click', function(){
+    if (adminOpen){
+      document.getElementById('addPanel').scrollIntoView();
+      try { document.getElementById('addInput').focus(); } catch(e){}
+      return;
     }
-    return json_({ ok: true, sites: listSites_() });
-  }
-  if (body.action === 'run' && body.siteUrl) {
-    var now = Date.now();
-    getControl_().getRange('A1:B1').setValues([[body.siteUrl, now]]);
-    return json_({ ok: true, at: now });
-  }
-  return json_({ ok: false, error: 'unknown action' });
-}
+    var gate = document.getElementById('adminGate');
+    gate.style.display = gate.style.display === 'block' ? 'none' : 'block';
+    if (gate.style.display === 'block'){
+      gate.scrollIntoView();
+      try { document.getElementById('adminPwInput').focus(); } catch(e){}
+    }
+  });
+
+  document.getElementById('adminForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var pwEl = document.getElementById('adminPwInput');
+    var err = document.getElementById('adminErr');
+    var btn = document.getElementById('adminUnlockBtn');
+    err.style.display = 'none';
+    btn.textContent = 'Checking…'; btn.disabled = true;
+    var pwVal = pwEl.value;
+    // 'verify' is not a real action: the server answers 'unknown action' only
+    // when the admin password was right, so that answer means the password is correct.
+    apiPost({ adminPw: pwVal, action:'verify' }).then(function(data){
+      btn.textContent = 'Open'; btn.disabled = false;
+      pwEl.value = '';
+      if (data && (data.verified || data.error === 'unknown action')){
+        adminPw = pwVal;
+        adminOpen = true;
+        document.getElementById('adminGate').style.display = 'none';
+        document.getElementById('addPanel').style.display = 'block';
+        render();
+        toast('Add pages unlocked');
+        try { document.getElementById('addInput').focus(); } catch(e){}
+      } else {
+        err.textContent = 'Wrong admin password.';
+        err.style.display = 'block';
+        pwEl.focus();
+      }
+    }).catch(function(){
+      btn.textContent = 'Open'; btn.disabled = false;
+      err.textContent = "Couldn't reach your list — check the internet and try again.";
+      err.style.display = 'block';
+    });
+  });
+
+  // ---- add site ----
+  document.getElementById('addForm').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var inp = document.getElementById('addInput');
+    var err = document.getElementById('addErr');
+    var btn = document.getElementById('addBtn');
+    var parsed = parseInput(inp.value);
+    if (!parsed){
+      err.textContent = "That doesn't look like a link. Paste something like https://github.com/you/your-project";
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    btn.textContent = 'Adding…'; btn.disabled = true;
+    apiPost({ adminPw: adminPw, action:'add', site: parsed }).then(function(data){
+      btn.textContent = 'Add website'; btn.disabled = false;
+      if (data && data.ok){
+        sites = data.sites || [];
+        sitesJson = JSON.stringify(sites);
+        render();
+        inp.value = '';
+        toast('Added ' + parsed.name + ' — visible to everyone');
+      } else {
+        err.textContent = "Couldn't save it — try again.";
+        err.style.display = 'block';
+      }
+    }).catch(function(){
+      btn.textContent = 'Add website'; btn.disabled = false;
+      err.textContent = "Couldn't reach your list — check the internet and try again.";
+      err.style.display = 'block';
+    });
+  });
+
+  // ---- relock: closing or reloading also relocks, nothing is kept ----
+  document.getElementById('relock').addEventListener('click', function(){
+    stopPoll();
+    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0;
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('addPanel').style.display = 'none';
+    document.getElementById('adminGate').style.display = 'none';
+    document.getElementById('lock').style.display = 'flex';
+    var pwEl = document.getElementById('pw');
+    pwEl.value = '';
+    try { pwEl.focus(); } catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
