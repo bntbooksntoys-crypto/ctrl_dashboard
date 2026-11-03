@@ -80,6 +80,12 @@
   .btn-run{background:var(--teal);color:#fff;font-size:.9rem;padding:9px 16px}
   .btn-run:hover{background:var(--teal-deep)}
   .btn-run:disabled{opacity:.6;cursor:default}
+  .btn-stop{background:#fff;color:#B3362B;border-color:#E2B4AE;font-size:.9rem;padding:9px 16px}
+  .btn-stop:hover{background:#FBEFED}
+  .btn-stop:disabled{opacity:.6;cursor:default}
+  .run-status{display:none;font-size:.85rem;color:var(--ink-soft);margin-top:10px}
+  .run-status.good{color:var(--teal-deep);font-weight:600}
+  .run-status.bad{color:#B3362B}
 
   /* ---- site list ---- */
   #app{display:none}
@@ -362,6 +368,82 @@
     toast('Select and copy the link below.');
   }
 
+  function setStatus(el, msg, kind){
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+    el.className = 'run-status' + (kind ? ' ' + kind : '');
+  }
+
+  function broadcastOpen(s){
+    return apiPost({ adminPw: adminPw, action:'run', siteUrl: s.siteUrl }).then(function(data){
+      if (data && data.ok){
+        lastRunAt = Number(data.at) || Date.now();
+        toast('Opening ' + (s.name || 'site') + ' on all devices');
+        try { window.open(s.siteUrl, '_blank', 'noopener'); } catch(e){}
+      }
+    });
+  }
+
+  // Run: tell GitHub to deploy (green tick), then open on every device.
+  // Stop: tell GitHub to publish the offline page instead.
+  function deployFlow(s, mode, runBtn, stopBtn, statusEl){
+    if (!s.repoUrl){
+      runBtn.disabled = true;
+      broadcastOpen(s).then(function(){ runBtn.disabled = false; },
+        function(){ runBtn.disabled = false; toast("Couldn't reach your list — check the internet."); });
+      return;
+    }
+    runBtn.disabled = true; if (stopBtn) stopBtn.disabled = true;
+    setStatus(statusEl, mode === 'on' ? 'Asking GitHub to run the code…' : 'Asking GitHub to take the site offline…');
+    var beforeId = 0;
+    apiPost({ adminPw: adminPw, action:'deploy_status', repoUrl: s.repoUrl }).then(function(st){
+      if (st && st.ok && st.run) beforeId = st.run.id;
+      return apiPost({ adminPw: adminPw, action:'deploy', repoUrl: s.repoUrl, mode: mode });
+    }).then(function(d){
+      if (!d || !d.ok){
+        var msg = d && d.error === 'no workflow'
+          ? 'Run is not set up for this site yet (no workflow file in its repo).'
+          : 'Could not start: ' + ((d && (d.detail || d.error)) || 'unknown error');
+        setStatus(statusEl, '✗ ' + msg, 'bad');
+        runBtn.disabled = false; if (stopBtn) stopBtn.disabled = false;
+        return;
+      }
+      setStatus(statusEl, 'GitHub is running the code…');
+      var ticks = 0;
+      var t = setInterval(function(){
+        ticks++;
+        if (ticks > 60){
+          clearInterval(t);
+          setStatus(statusEl, 'Taking longer than usual — check the Actions tab on GitHub.', 'bad');
+          runBtn.disabled = false; if (stopBtn) stopBtn.disabled = false;
+          return;
+        }
+        apiPost({ adminPw: adminPw, action:'deploy_status', repoUrl: s.repoUrl }).then(function(st){
+          if (!st || !st.ok || !st.run || st.run.id === beforeId) return; // new run not visible yet
+          if (st.run.status !== 'completed'){
+            setStatus(statusEl, 'GitHub is running the code… (' + String(st.run.status).replace(/_/g,' ') + ')');
+            return;
+          }
+          clearInterval(t);
+          runBtn.disabled = false; if (stopBtn) stopBtn.disabled = false;
+          if (st.run.conclusion === 'success'){
+            if (mode === 'on'){
+              setStatus(statusEl, '✓ Code has been run — green tick on GitHub. Opening the site on all devices…', 'good');
+              broadcastOpen(s);
+            } else {
+              setStatus(statusEl, '✓ Site is offline now.', 'good');
+            }
+          } else {
+            setStatus(statusEl, '✗ Run failed (' + st.run.conclusion + ') — check the Actions tab on GitHub.', 'bad');
+          }
+        }).catch(function(){ /* try next tick */ });
+      }, 5000);
+    }).catch(function(){
+      setStatus(statusEl, "✗ Couldn't reach your list — check the internet.", 'bad');
+      runBtn.disabled = false; if (stopBtn) stopBtn.disabled = false;
+    });
+  }
+
   function render(){
     var grid = document.getElementById('grid');
     grid.innerHTML = '';
@@ -411,27 +493,30 @@
         row.appendChild(gh);
       }
 
+      var statusEl = document.createElement('p');
+      statusEl.className = 'run-status';
+
       if (adminOpen){
+        var stopBtn = null;
         var runBtn = document.createElement('button');
         runBtn.className = 'btn btn-run'; runBtn.type = 'button'; runBtn.textContent = 'Run';
-        runBtn.title = 'Open this site on every device viewing this page';
+        runBtn.title = s.repoUrl
+          ? 'Deploy this site on GitHub, then open it on every device'
+          : 'Open this site on every device viewing this page';
         runBtn.addEventListener('click', function(){
-          runBtn.disabled = true; runBtn.textContent = 'Running…';
-          apiPost({ adminPw: adminPw, action:'run', siteUrl: s.siteUrl }).then(function(data){
-            runBtn.disabled = false; runBtn.textContent = 'Run';
-            if (data && data.ok){
-              lastRunAt = Number(data.at) || Date.now();
-              toast('Running ' + (s.name || 'site') + ' on all devices');
-              try { window.open(s.siteUrl, '_blank', 'noopener'); } catch(e){}
-            } else {
-              toast("Couldn't send Run — try again.");
-            }
-          }).catch(function(){
-            runBtn.disabled = false; runBtn.textContent = 'Run';
-            toast("Couldn't reach your list — check the internet.");
-          });
+          deployFlow(s, 'on', runBtn, stopBtn, statusEl);
         });
         row.appendChild(runBtn);
+
+        if (s.repoUrl){
+          stopBtn = document.createElement('button');
+          stopBtn.className = 'btn btn-stop'; stopBtn.type = 'button'; stopBtn.textContent = 'Stop';
+          stopBtn.title = 'Take this site offline';
+          stopBtn.addEventListener('click', function(){
+            deployFlow(s, 'off', runBtn, stopBtn, statusEl);
+          });
+          row.appendChild(stopBtn);
+        }
 
         var rm = document.createElement('button');
         rm.className = 'link-remove'; rm.type = 'button'; rm.textContent = 'Remove';
@@ -461,6 +546,7 @@
       }
 
       body.appendChild(row);
+      body.appendChild(statusEl);
 
       var fb = document.createElement('div');
       fb.className = 'fallback-box';
