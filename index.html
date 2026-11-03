@@ -588,7 +588,8 @@
 
   // ---- relock: closing or reloading also relocks, nothing is kept ----
   document.getElementById('relock').addEventListener('click', function(){
-    viewPw = null; adminPw = null; sites = []; adminOpen = false;
+    stopPoll();
+    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0;
     document.getElementById('grid').innerHTML = '';
     document.getElementById('app').style.display = 'none';
     document.getElementById('addPanel').style.display = 'none';
