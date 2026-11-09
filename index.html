@@ -183,6 +183,8 @@
   #consoleBody{flex:1;overflow-y:auto;padding:18px 20px;font-family:ui-monospace,'Consolas',monospace;font-size:.92rem;line-height:1.8;color:#4ADE80;word-break:break-word}
   #consoleBody .meta{color:#6B7E9C}
   #consoleBody .empty{color:#6B7E9C}
+  #consoleBody .event{color:#38BDF8}
+  #onlineInfo{color:#38BDF8;font-weight:600}
 
   #toast{
     position:fixed;left:50%;bottom:28px;
@@ -262,7 +264,7 @@
 
 <div id="console">
   <div id="consoleHead">
-    <span>&#9679; <b>LIVE</b> &mdash; chatbot messages</span>
+    <span>&#9679; <b>LIVE</b> &mdash; chatbot messages<span id="onlineInfo"></span></span>
     <button type="button" id="consoleClose">Close</button>
   </div>
   <div id="consoleBody"><div class="empty">Waiting for messages... visitors who write in the chatbot appear here within 5 seconds.</div></div>
@@ -408,6 +410,23 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
+  var seenVids = {};
+
+  function addConsoleEvent(text){
+    var bodyEl = document.getElementById('consoleBody');
+    var empty = bodyEl.querySelector('.empty');
+    if (empty) empty.remove();
+    var div = document.createElement('div');
+    div.className = 'event';
+    var meta = document.createElement('span');
+    meta.className = 'meta';
+    meta.textContent = '[' + new Date().toLocaleTimeString() + '] ';
+    div.appendChild(meta);
+    div.appendChild(document.createTextNode(text));
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
   function fetchInbox(){
     if (!adminPw) return;
     apiPost({ adminPw: adminPw, action: 'inbox', sinceId: lastMsgId }).then(function(d){
@@ -415,6 +434,15 @@
       (d.messages || []).forEach(function(m){
         if (Number(m.id) > lastMsgId) lastMsgId = Number(m.id);
         addConsoleLine(m);
+      });
+      var pres = d.presence || [];
+      var info = document.getElementById('onlineInfo');
+      info.textContent = ' · ' + pres.length + (pres.length === 1 ? ' visitor online' : ' visitors online');
+      pres.forEach(function(v){
+        if (!seenVids[v.vid]){
+          seenVids[v.vid] = true;
+          addConsoleEvent('visitor online > ' + (v.page || 'unknown page'));
+        }
       });
     }).catch(function(){ /* try again next tick */ });
   }
@@ -744,7 +772,7 @@
     stopPoll();
     closeConsole();
     document.getElementById('msgsBtn').style.display = 'none';
-    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0; lastMsgId = 0;
+    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0; lastMsgId = 0; seenVids = {};
     document.getElementById('grid').innerHTML = '';
     document.getElementById('app').style.display = 'none';
     document.getElementById('addPanel').style.display = 'none';
