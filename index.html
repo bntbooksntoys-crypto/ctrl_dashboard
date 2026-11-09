@@ -83,6 +83,8 @@
   .btn-stop{background:#fff;color:#B3362B;border-color:#E2B4AE;font-size:.9rem;padding:9px 16px}
   .btn-stop:hover{background:#FBEFED}
   .btn-stop:disabled{opacity:.6;cursor:default}
+  .btn-live{background:#0A0E14;color:#4ADE80;font-size:.9rem;padding:9px 16px}
+  .btn-live:hover{background:#1E2735}
   .run-status{display:none;font-size:.85rem;color:var(--ink-soft);margin-top:10px}
   .run-status.good{color:var(--teal-deep);font-weight:600}
   .run-status.bad{color:#B3362B}
@@ -479,7 +481,7 @@
 
   // Run: tell GitHub to deploy (green tick), then open on every device.
   // Stop: tell GitHub to publish the offline page instead.
-  function deployFlow(s, mode, runBtn, stopBtn, statusEl){
+  function deployFlow(s, mode, runBtn, stopBtn, statusEl, liveBtn){
     if (!s.repoUrl){
       runBtn.disabled = true;
       broadcastOpen(s).then(function(){ runBtn.disabled = false; },
@@ -524,8 +526,8 @@
               setStatus(statusEl, '✓ Code has been run — green tick on GitHub. Opening the site on all devices…', 'good');
               broadcastOpen(s);
             } else {
-              setStatus(statusEl, '✓ Site is offline now. Opening the live message window…', 'good');
-              openConsole();
+              setStatus(statusEl, '✓ Site is offline now. Use the black button to watch who is online.', 'good');
+              if (liveBtn) liveBtn.style.display = 'inline-flex';
             }
           } else {
             setStatus(statusEl, '✗ Run failed (' + st.run.conclusion + ') — check the Actions tab on GitHub.', 'bad');
@@ -606,10 +608,19 @@
           stopBtn = document.createElement('button');
           stopBtn.className = 'btn btn-stop'; stopBtn.type = 'button'; stopBtn.textContent = 'Stop';
           stopBtn.title = 'Take this site offline';
-          stopBtn.addEventListener('click', function(){
-            deployFlow(s, 'off', runBtn, stopBtn, statusEl);
-          });
           row.appendChild(stopBtn);
+
+          var liveBtn = document.createElement('button');
+          liveBtn.className = 'btn btn-live'; liveBtn.type = 'button';
+          liveBtn.textContent = '● Who is online';
+          liveBtn.title = 'Open the black window to watch visitors and messages live';
+          liveBtn.style.display = 'none';
+          liveBtn.addEventListener('click', openConsole);
+          row.appendChild(liveBtn);
+
+          stopBtn.addEventListener('click', function(){
+            deployFlow(s, 'off', runBtn, stopBtn, statusEl, liveBtn);
+          });
         }
 
         var rm = document.createElement('button');
