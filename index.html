@@ -173,6 +173,17 @@
   #adminGate{display:none}
   #addPanel{display:none}
 
+  /* ---- black live-message window ---- */
+  #console{display:none;position:fixed;inset:0;background:#0A0E14;z-index:50;flex-direction:column}
+  #consoleHead{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #1E2735}
+  #consoleHead span{color:#9FB3D1;font-size:.9rem;font-weight:600}
+  #consoleHead span b{color:#4ADE80}
+  #consoleClose{background:none;border:1px solid #2A3854;color:#9FB3D1;border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem}
+  #consoleClose:hover{color:#fff;border-color:#9FB3D1}
+  #consoleBody{flex:1;overflow-y:auto;padding:18px 20px;font-family:ui-monospace,'Consolas',monospace;font-size:.92rem;line-height:1.8;color:#4ADE80;word-break:break-word}
+  #consoleBody .meta{color:#6B7E9C}
+  #consoleBody .empty{color:#6B7E9C}
+
   #toast{
     position:fixed;left:50%;bottom:28px;
     transform:translate(-50%,16px);
@@ -218,6 +229,7 @@
       <h1>My Websites<span class="dot">.</span></h1>
       <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
       <div class="head-actions">
+        <button type="button" class="head-btn" id="msgsBtn" style="display:none">Messages</button>
         <button type="button" class="head-btn" id="adminBtn">Add pages</button>
         <button type="button" class="head-btn" id="relock">Lock page</button>
       </div>
@@ -246,6 +258,14 @@
       <p class="err" id="addErr"></p>
     </section>
   </div>
+</div>
+
+<div id="console">
+  <div id="consoleHead">
+    <span>&#9679; <b>LIVE</b> &mdash; chatbot messages</span>
+    <button type="button" id="consoleClose">Close</button>
+  </div>
+  <div id="consoleBody"><div class="empty">Waiting for messages... visitors who write in the chatbot appear here within 5 seconds.</div></div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -368,6 +388,51 @@
     toast('Select and copy the link below.');
   }
 
+  // ---- black live-message window ----
+  var consoleTimer = null;
+  var lastMsgId = 0;
+
+  function addConsoleLine(m){
+    var bodyEl = document.getElementById('consoleBody');
+    var empty = bodyEl.querySelector('.empty');
+    if (empty) empty.remove();
+    var div = document.createElement('div');
+    var t = new Date(m.time);
+    var ts = isNaN(t.getTime()) ? '' : ('[' + t.toLocaleTimeString() + '] ');
+    var meta = document.createElement('span');
+    meta.className = 'meta';
+    meta.textContent = ts + (m.from || 'anonymous') + ' > ';
+    div.appendChild(meta);
+    div.appendChild(document.createTextNode(m.message));
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  function fetchInbox(){
+    if (!adminPw) return;
+    apiPost({ adminPw: adminPw, action: 'inbox', sinceId: lastMsgId }).then(function(d){
+      if (!d || !d.ok) return;
+      (d.messages || []).forEach(function(m){
+        if (Number(m.id) > lastMsgId) lastMsgId = Number(m.id);
+        addConsoleLine(m);
+      });
+    }).catch(function(){ /* try again next tick */ });
+  }
+
+  function openConsole(){
+    document.getElementById('console').style.display = 'flex';
+    fetchInbox();
+    if (!consoleTimer) consoleTimer = setInterval(fetchInbox, 5000);
+  }
+
+  function closeConsole(){
+    document.getElementById('console').style.display = 'none';
+    if (consoleTimer){ clearInterval(consoleTimer); consoleTimer = null; }
+  }
+
+  document.getElementById('consoleClose').addEventListener('click', closeConsole);
+  document.getElementById('msgsBtn').addEventListener('click', openConsole);
+
   function setStatus(el, msg, kind){
     el.textContent = msg || '';
     el.style.display = msg ? 'block' : 'none';
@@ -431,7 +496,8 @@
               setStatus(statusEl, '✓ Code has been run — green tick on GitHub. Opening the site on all devices…', 'good');
               broadcastOpen(s);
             } else {
-              setStatus(statusEl, '✓ Site is offline now.', 'good');
+              setStatus(statusEl, '✓ Site is offline now. Opening the live message window…', 'good');
+              openConsole();
             }
           } else {
             setStatus(statusEl, '✗ Run failed (' + st.run.conclusion + ') — check the Actions tab on GitHub.', 'bad');
@@ -624,6 +690,7 @@
         adminOpen = true;
         document.getElementById('adminGate').style.display = 'none';
         document.getElementById('addPanel').style.display = 'block';
+        document.getElementById('msgsBtn').style.display = 'inline-flex';
         render();
         toast('Add pages unlocked');
         try { document.getElementById('addInput').focus(); } catch(e){}
@@ -675,7 +742,9 @@
   // ---- relock: closing or reloading also relocks, nothing is kept ----
   document.getElementById('relock').addEventListener('click', function(){
     stopPoll();
-    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0;
+    closeConsole();
+    document.getElementById('msgsBtn').style.display = 'none';
+    viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0; lastMsgId = 0;
     document.getElementById('grid').innerHTML = '';
     document.getElementById('app').style.display = 'none';
     document.getElementById('addPanel').style.display = 'none';
