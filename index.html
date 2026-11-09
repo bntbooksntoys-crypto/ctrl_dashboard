@@ -180,8 +180,9 @@
   #consoleHead{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #1E2735}
   #consoleHead span{color:#9FB3D1;font-size:.9rem;font-weight:600}
   #consoleHead span b{color:#4ADE80}
-  #consoleClose{background:none;border:1px solid #2A3854;color:#9FB3D1;border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem}
-  #consoleClose:hover{color:#fff;border-color:#9FB3D1}
+  #consoleClose,#consoleRefresh{background:none;border:1px solid #2A3854;color:#9FB3D1;border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem}
+  #consoleClose:hover,#consoleRefresh:hover{color:#fff;border-color:#9FB3D1}
+  #consoleRefresh{color:#4ADE80;margin-right:8px}
   #consoleBody{flex:1;overflow-y:auto;padding:18px 20px;font-family:ui-monospace,'Consolas',monospace;font-size:.92rem;line-height:1.8;color:#4ADE80;word-break:break-word}
   #consoleBody .meta{color:#6B7E9C}
   #consoleBody .empty{color:#6B7E9C}
@@ -267,7 +268,10 @@
 <div id="console">
   <div id="consoleHead">
     <span>&#9679; <b>LIVE</b> &mdash; chatbot messages<span id="onlineInfo"></span></span>
-    <button type="button" id="consoleClose">Close</button>
+    <span>
+      <button type="button" id="consoleRefresh">Refresh</button>
+      <button type="button" id="consoleClose">Close</button>
+    </span>
   </div>
   <div id="consoleBody"><div class="empty">Waiting for messages... visitors who write in the chatbot appear here within 5 seconds.</div></div>
 </div>
@@ -393,7 +397,6 @@
   }
 
   // ---- black live-message window ----
-  var consoleTimer = null;
   var lastMsgId = 0;
 
   function addConsoleLine(m){
@@ -449,19 +452,25 @@
     }).catch(function(){ /* try again next tick */ });
   }
 
+  // No automatic refreshing: the window loads once when opened, then only
+  // when the Refresh button is pressed.
   function openConsole(){
     document.getElementById('console').style.display = 'flex';
     fetchInbox();
-    if (!consoleTimer) consoleTimer = setInterval(fetchInbox, 5000);
   }
 
   function closeConsole(){
     document.getElementById('console').style.display = 'none';
-    if (consoleTimer){ clearInterval(consoleTimer); consoleTimer = null; }
   }
 
   document.getElementById('consoleClose').addEventListener('click', closeConsole);
   document.getElementById('msgsBtn').addEventListener('click', openConsole);
+  document.getElementById('consoleRefresh').addEventListener('click', function(){
+    var rb = document.getElementById('consoleRefresh');
+    rb.textContent = 'Refreshing…'; rb.disabled = true;
+    fetchInbox();
+    setTimeout(function(){ rb.textContent = 'Refresh'; rb.disabled = false; }, 900);
+  });
 
   function setStatus(el, msg, kind){
     el.textContent = msg || '';
