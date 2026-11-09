@@ -189,6 +189,21 @@
   #consoleBody .event{color:#38BDF8}
   #onlineInfo{color:#38BDF8;font-weight:600}
 
+  /* ---- phone-number book ---- */
+  #phonebook{display:none;position:fixed;inset:0;background:#0A0E14;z-index:60;flex-direction:column}
+  #phonebook .pb-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #1E2735}
+  #phonebook .pb-head span{color:#9FB3D1;font-size:.9rem;font-weight:600}
+  #phonebook .pb-head span b{color:#4ADE80}
+  #pbBody{flex:1;overflow-y:auto;padding:18px 20px;font-family:ui-monospace,'Consolas',monospace;font-size:.92rem;line-height:1.9;color:#E6EDF6;word-break:break-word}
+  #pbBody .meta{color:#6B7E9C}
+  #pbBody .empty{color:#6B7E9C}
+  .pnum{color:#4ADE80;font-weight:700;text-decoration:none}
+  .pnum:hover{text-decoration:underline}
+  #pbRefresh{background:none;border:1px solid #2A3854;color:#4ADE80;border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem;margin-right:8px}
+  #pbRefresh:hover{border-color:#4ADE80}
+  #pbClose{background:none;border:1px solid #2A3854;color:#9FB3D1;border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:.85rem}
+  #pbClose:hover{color:#fff;border-color:#9FB3D1}
+
   #toast{
     position:fixed;left:50%;bottom:28px;
     transform:translate(-50%,16px);
@@ -234,6 +249,7 @@
       <h1>My Websites<span class="dot">.</span></h1>
       <p>Every site in one place. Visit site opens it and copies the link, ready to share with anyone.</p>
       <div class="head-actions">
+        <button type="button" class="head-btn" id="phonesBtn" style="display:none">&#128222; Numbers</button>
         <button type="button" class="head-btn" id="msgsBtn" style="display:none">Messages</button>
         <button type="button" class="head-btn" id="adminBtn">Add pages</button>
         <button type="button" class="head-btn" id="relock">Lock page</button>
@@ -274,6 +290,17 @@
     </span>
   </div>
   <div id="consoleBody"><div class="empty">Waiting for messages... visitors who write in the chatbot appear here within 5 seconds.</div></div>
+</div>
+
+<div id="phonebook">
+  <div class="pb-head">
+    <span>&#128222; <b>Phone numbers</b> &mdash; tap a number to call</span>
+    <span>
+      <button type="button" id="pbRefresh">Refresh</button>
+      <button type="button" id="pbClose">Close</button>
+    </span>
+  </div>
+  <div id="pbBody"></div>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -465,6 +492,63 @@
 
   document.getElementById('consoleClose').addEventListener('click', closeConsole);
   document.getElementById('msgsBtn').addEventListener('click', openConsole);
+
+  // ---- phone-number book (loads when opened or on Refresh, never by itself) ----
+  function fetchPhones(){
+    if (!adminPw) return;
+    var bodyEl = document.getElementById('pbBody');
+    apiPost({ adminPw: adminPw, action: 'phones' }).then(function(d){
+      if (!d || !d.ok) return;
+      bodyEl.innerHTML = '';
+      var list = d.phones || [];
+      if (!list.length){
+        var e = document.createElement('div');
+        e.className = 'empty';
+        e.textContent = 'No phone numbers yet. When a visitor types their number in the chatbot, it appears here.';
+        bodyEl.appendChild(e);
+        return;
+      }
+      list.forEach(function(m){
+        var div = document.createElement('div');
+        var t = new Date(m.time);
+        var ts = isNaN(t.getTime()) ? '' : ('[' + t.toLocaleString() + '] ');
+        var meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = ts + (m.from || 'anonymous') + ' > ';
+        var a = document.createElement('a');
+        a.className = 'pnum';
+        a.href = 'tel:' + m.phone;
+        a.textContent = m.phone;
+        div.appendChild(meta);
+        div.appendChild(a);
+        if (m.message){
+          var sp = document.createElement('span');
+          sp.className = 'meta';
+          sp.textContent = ' — ' + m.message;
+          div.appendChild(sp);
+        }
+        bodyEl.appendChild(div);
+      });
+    }).catch(function(){
+      toast("Couldn't load the numbers — try Refresh.");
+    });
+  }
+
+  function openPhonebook(){
+    document.getElementById('phonebook').style.display = 'flex';
+    fetchPhones();
+  }
+  function closePhonebook(){
+    document.getElementById('phonebook').style.display = 'none';
+  }
+  document.getElementById('phonesBtn').addEventListener('click', openPhonebook);
+  document.getElementById('pbClose').addEventListener('click', closePhonebook);
+  document.getElementById('pbRefresh').addEventListener('click', function(){
+    var rb = document.getElementById('pbRefresh');
+    rb.textContent = 'Refreshing…'; rb.disabled = true;
+    fetchPhones();
+    setTimeout(function(){ rb.textContent = 'Refresh'; rb.disabled = false; }, 900);
+  });
   document.getElementById('consoleRefresh').addEventListener('click', function(){
     var rb = document.getElementById('consoleRefresh');
     rb.textContent = 'Refreshing…'; rb.disabled = true;
@@ -739,6 +823,7 @@
         document.getElementById('adminGate').style.display = 'none';
         document.getElementById('addPanel').style.display = 'block';
         document.getElementById('msgsBtn').style.display = 'inline-flex';
+        document.getElementById('phonesBtn').style.display = 'inline-flex';
         render();
         toast('Add pages unlocked');
         try { document.getElementById('addInput').focus(); } catch(e){}
@@ -791,7 +876,9 @@
   document.getElementById('relock').addEventListener('click', function(){
     stopPoll();
     closeConsole();
+    closePhonebook();
     document.getElementById('msgsBtn').style.display = 'none';
+    document.getElementById('phonesBtn').style.display = 'none';
     viewPw = null; adminPw = null; sites = []; sitesJson = ''; adminOpen = false; lastRunAt = 0; lastMsgId = 0; seenVids = {};
     document.getElementById('grid').innerHTML = '';
     document.getElementById('app').style.display = 'none';
